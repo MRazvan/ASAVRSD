@@ -211,7 +211,10 @@ namespace Debugger.Server
                 if (_state != DebuggerState.NotConnected)
                 {
                     InDebug = true;
-                    DebuggerAttached?.Invoke();
+                    Task.Run(() =>
+                    {
+                        DebuggerAttached?.Invoke();
+                    });
                 }
             }
             else
@@ -219,10 +222,10 @@ namespace Debugger.Server
                 if (_currentCommand != null)
                 {
                     _currentCommandBuffer[_currentCommandReceiveIdx++] = data;
-                    if (_currentCommandReceiveIdx != _currentCommand.Command.ResponseSize){
+                    if (_currentCommandReceiveIdx != _currentCommand.Command.ResponseSize)
+                    {
                         return;
                     }
-
                     _currentCommand.TCS.SetResult(_currentCommandBuffer);
                     _currentCommand = null;
                 }
@@ -254,16 +257,19 @@ namespace Debugger.Server
                 {
                     // ?? do what? should we just throw and let others
                     //  handle this?
-                    throw;    
+                    throw;
                 }
             }
-            catch(UnauthorizedAccessException)
+            catch (UnauthorizedAccessException)
             {
                 // In case of serial transport
                 //  this happens when the port becommes unavailable
                 //  usually when the cable was disconnected
                 // Should we notifiy someone?
-                DebuggerDisconnected?.Invoke();
+                Task.Run(() =>
+                {
+                    DebuggerDisconnected?.Invoke();
+                });
             }
         }
     }

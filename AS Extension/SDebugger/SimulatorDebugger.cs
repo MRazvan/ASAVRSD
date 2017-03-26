@@ -10,6 +10,8 @@ using Debugger.Server.Commands;
 using Microsoft.VisualStudio.Shell.Interop;
 using IServiceProvider = System.IServiceProvider;
 using System.Windows.Threading;
+using Atmel.VsIde.AvrStudio.Services.TargetService.TCF.Services.RunControl;
+using System.Threading.Tasks;
 
 namespace Microsoft.WPFWizardExample.SDebugger
 {
@@ -37,6 +39,10 @@ namespace Microsoft.WPFWizardExample.SDebugger
         private Action _contextSuspendedAction;
         private Action _contextResumedAction;
         private bool _step;
+
+        private IRunControlContext _originalRCC;
+        private IRunControlContext _newRCC;
+        private bool _finishedEnterDebug;
 
         public SimulatorDebugger(IServiceProvider serviceProvider)
         {
@@ -87,13 +93,17 @@ namespace Microsoft.WPFWizardExample.SDebugger
             var vsDebugger = _serviceProvider.GetService(typeof(IVsDebugger)) as IVsDebugger;
             vsDebugger?.AdviseDebuggerEvents(this, out _cookie);
 
-            _eventListener = new EventListener(_debugTarget, _server, _debugTarget.GetMemType("data"));
+            _eventListener = new EventListener(_debugTarget, _server, _debugTarget.GetMemType("data"), _traceOutPane);
             _eventListener.ContextSuspended = ContextSuspended;
             _eventListener.ContextResumed = ContextResumed;
 
             _channel = _debugTarget.KnownTool.GetChannel();
             _services = _channel.GetRemoteServices().ToList();
             _services.ForEach(service => _channel.AddEventListener(service, _eventListener));
+
+            _originalRCC = (IRunControlContext)ReflectionHelper.GetPropertyValue(_debugTarget, "RunControlContext");
+            _newRCC = new RunControlProxyWrapper(_originalRCC, _traceOutPane);
+            ReflectionHelper.SetPropertyValue(_debugTarget, _newRCC, "RunControlContext");
 
             _running = true;
         }
@@ -102,7 +112,9 @@ namespace Microsoft.WPFWizardExample.SDebugger
         {
             if (_contextResumedAction == null)
                 return;
+            _traceOutPane.OutputString("ContextResumed QUEUE\n");
             TargetService.MainThreadDispatcher.BeginInvoke(new Action(() => {
+                _traceOutPane.OutputString("ContextResumed EXECUTE\n");
                 _contextResumedAction();
                 _contextResumedAction = null;
             }), DispatcherPriority.Background, null);
@@ -112,7 +124,10 @@ namespace Microsoft.WPFWizardExample.SDebugger
         {
             if (_contextSuspendedAction == null)
                 return;
+
+            _traceOutPane.OutputString("ContextSuspended QUEUE\n");
             TargetService.MainThreadDispatcher.BeginInvoke(new Action(() => {
+                _traceOutPane.OutputString("ContextSuspended EXECUTE\n");
                 _contextSuspendedAction();
                 _contextSuspendedAction = null;
             }), DispatcherPriority.Background, null);
@@ -128,15 +143,18 @@ namespace Microsoft.WPFWizardExample.SDebugger
             _server.UnknownData -= SerialOut;
             _server = null;
 
+            ReflectionHelper.SetPropertyValue(_debugTarget, _originalRCC, "RunControlContext");
             _target = null;
             _debugTarget = null;
+            _originalRCC = null;
+            _newRCC = null;
             _ramSpace = null;
             _pc = 0;
 
             var vsDebugger = _serviceProvider.GetService(typeof(IVsDebugger)) as IVsDebugger;
             vsDebugger?.UnadviseDebuggerEvents(_cookie);
             _cookie = 0;
-
+            
             _services.ForEach(service => _channel.RemoveEventListener(service, _eventListener));
             _running = false;
         }
@@ -146,22 +164,30 @@ namespace Microsoft.WPFWizardExample.SDebugger
             if (_server.InDebug && _contextResumedAction == null)
             {
                 _traceOutPane.OutputString("STEP init\n");
+                _finishedEnterDebug = false;
                 _step = true;
                 _contextResumedAction = () =>
                 {
                     // Tell the debug server to send the continue command
                     _server.Step();
-                    _traceOutPane.OutputString("STEP done\n");
+                    _traceOutPane.OutputString("STEP\n");
                 };
                 // We don't want to update the RAM in run mode
                 _eventListener.SuspendUpdate();
-
+                
                 IStatus status;
                 _debugTarget.SDM_Step(1, out status);
             }
         }
 
-        private async void ServerOnDebuggerAttached()
+        private byte[] WaitForCommand(IDebugCommand command)
+        {
+            var task = _server.AddCommand(command);
+            task.Wait();
+            return task.Result;
+        }
+
+        private void ServerOnDebuggerAttached()
         {
             // Check if the signature matches
             if (_debugTarget.Device.Signature != _server.DeviceSignature)
@@ -170,13 +196,12 @@ namespace Microsoft.WPFWizardExample.SDebugger
                 DbgStop();
                 return;
             }
-
             IStatus status;
-            var ramData = await _server.AddCommand(new DebugCommand_Ram_Read((uint)_ramSpace.Start, (uint)_ramSpace.Size));
+            var ramData = WaitForCommand(new DebugCommand_Ram_Read((uint)_ramSpace.Start, (uint)_ramSpace.Size));
             if (_server.Caps.HasFlag(DebuggerCapabilities.CAPS_DBG_CTX_ADDR_BIT) &
                 _server.Caps.HasFlag(DebuggerCapabilities.CAPS_SAVE_CONTEXT_BIT))
             {
-                var dbgCtxData = await _server.AddCommand(new DebugCommand_CtxRead());
+                var dbgCtxData = WaitForCommand(new DebugCommand_CtxRead());
                 var dbCtxAddr = (dbgCtxData[0] << 8) + dbgCtxData[1];
                 // Set the registers from the saved context
                 for (var i = 0; i < 32; ++i)
@@ -194,7 +219,7 @@ namespace Microsoft.WPFWizardExample.SDebugger
                         new DebugTarget.TargetHaltedEventArgs(_pc * 2, "Extern Break", _debugTarget.ProcessesContextid, null)
                     );
                     _eventListener.ResumeUpdate();
-
+                    _finishedEnterDebug = true;
                 };
             }
             else
@@ -207,9 +232,9 @@ namespace Microsoft.WPFWizardExample.SDebugger
                         new DebugTarget.TargetHaltedEventArgs(_pc * 2, "Extern Break", _debugTarget.ProcessesContextid, null)
                     );
                     _eventListener.ResumeUpdate();
+                    _finishedEnterDebug = true;
                 };
             }
-
 
             _eventListener.SuspendUpdate();
             if (!_step)
@@ -217,17 +242,19 @@ namespace Microsoft.WPFWizardExample.SDebugger
                 _traceOutPane.OutputString("Continue\n");
                 // Suspend the target so we can update the state
                 _debugTarget.Suspend(out status);
-            }else
+            }
+            else
             {
                 _step = false;
-                _traceOutPane.OutputString("STEP debugger\n");
+                _traceOutPane.OutputString("STEP done\n");
             }
         }
 
         private void DbgRun()
         {
-            if (_server.InDebug && _running)
+            if (_server.InDebug && _running && _finishedEnterDebug)
             {
+                _finishedEnterDebug = false;
                 // We don't want to update the RAM in run mode
                 _eventListener.SuspendUpdate();
                 // Tell the debug server to send the continue command

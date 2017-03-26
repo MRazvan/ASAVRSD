@@ -8,6 +8,7 @@ using Atmel.VsIde.AvrStudio.Services.TargetService.TCF.Protocol;
 using Atmel.VsIde.AvrStudio.Services.TargetService.TCF.Services;
 using Debugger.Server;
 using Debugger.Server.Commands;
+using Microsoft.VisualStudio.Shell.Interop;
 
 namespace Microsoft.WPFWizardExample.SDebugger
 {
@@ -20,6 +21,7 @@ namespace Microsoft.WPFWizardExample.SDebugger
 
         public Action ContextSuspended;
         public Action ContextResumed;
+        private IVsOutputWindowPane _traceOutPane;
 
         public EventListener(DebugTarget target, IDebugServer server, string dataMemory)
         {
@@ -28,23 +30,37 @@ namespace Microsoft.WPFWizardExample.SDebugger
             _dataMemory = dataMemory;
         }
 
+        public EventListener(DebugTarget target, IDebugServer server, string dataMemory, IVsOutputWindowPane _traceOutPane) : this(target, server, dataMemory)
+        {
+            this._traceOutPane = _traceOutPane;
+        }
+
         public void Event(string name, byte[] data)
         {
+            if (name != "contextSuspended" && name != "contextResumed" && name != "memoryChanged")
+                _traceOutPane.OutputString($"Unknown event {name}\n");
+
             if (!_server.InDebug)
                 return;
+
             if (name == "contextSuspended")
             {
+                _traceOutPane.OutputString("contextSuspended\n");
                 ContextSuspended?.Invoke();
                 return;
             }
+
             if (name == "contextResumed")
             {
+                _traceOutPane.OutputString("contextResumed\n");
                 ContextResumed?.Invoke();
                 return;
             }
+
             object[] sequence = JSON.ParseSequence(data);
             if (name == "memoryChanged")
             {
+                _traceOutPane.OutputString($"memoryChanged  {data.Aggregate("", (seed, item) => seed + ", 0x" + item.ToString("X2")).Trim(',',' ') }\n");
                 HandleMemoryChanged(sequence);
             }
         }
@@ -75,7 +91,7 @@ namespace Microsoft.WPFWizardExample.SDebugger
 
             var memAddr = (long) properties["addr"];
             var memSize = (long) properties["size"];
-
+            _traceOutPane.OutputString($"memoryChanged - UPDATE Physical\n");
             TargetService.MainThreadDispatcher.BeginInvoke(
                 new Action<DebugTarget, IDebugServer, long, long>((target, server, addr, size) => {
                     MemoryError[] errRanges;
