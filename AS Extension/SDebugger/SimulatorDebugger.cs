@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Atmel.Studio.Services;
 using Atmel.Studio.Services.Device;
 using Atmel.VsIde.AvrStudio.Services.TargetService;
@@ -10,192 +11,95 @@ using Debugger.Server.Commands;
 using Microsoft.VisualStudio.Shell.Interop;
 using IServiceProvider = System.IServiceProvider;
 using System.Windows.Threading;
+using Atmel.VsIde.AvrStudio.Services.TargetService.TCF.Services;
 using Atmel.VsIde.AvrStudio.Services.TargetService.TCF.Services.RunControl;
-using System.Threading.Tasks;
+using EnvDTE;
 
 namespace Microsoft.WPFWizardExample.SDebugger
 {
-    public class SimulatorDebugger : IVsDebuggerEvents
+    public enum State
     {
-        public static Guid SDSerialOutputPane = Guid.Parse("{9F79FB17-B312-4050-90D4-A90D335ABFD8}");
-        public static Guid SDTraceOutputPane = Guid.Parse("{1FFE1F93-F2A8-4BC6-B83B-B88E6DD52FD8}");
+        None,
+        Continue,
+        Step,
+        EnteringBreak
+    }
 
-        
-        private readonly IServiceProvider _serviceProvider;
-        private readonly IVsOutputWindowPane _serialOutPane;
-        private readonly IVsOutputWindowPane _traceOutPane;
-
+    public class SimulatorDebugger
+    {
         private DebugTarget _debugTarget;
-        private uint _cookie;
         private uint _pc;
         private IAddressSpace _ramSpace;
         private bool _running;
         private DebugServer _server;
         private ITargetService _target;
-        private EventListener _eventListener;
-        private AbstractChannel _channel;
-        private List<string> _services;
-
-        private Action _contextSuspendedAction;
-        private Action _contextResumedAction;
-        private bool _step;
-
-        private IRunControlContext _originalRCC;
-        private IRunControlContext _newRCC;
-        private bool _finishedEnterDebug;
+        private DebuggerEventsProxy _events;
+        private Output _output;
+        private DTE _dte;
 
         public SimulatorDebugger(IServiceProvider serviceProvider)
         {
-            _serviceProvider = serviceProvider;
             _running = false;
-            _serialOutPane = InitializePane(ref SDSerialOutputPane, "SD Serial Output", true, true);
-            _traceOutPane = InitializePane(ref SDTraceOutputPane, "SD Trace Output", true, true);
+            _dte = serviceProvider.GetService(typeof(SDTE)) as DTE;
+            _server = new DebugServer();
+            _events = new DebuggerEventsProxy(_server);
+            _output = new Output(serviceProvider);
+            _output.Initialize();
         }
 
-        public int OnModeChange(DBGMODE dbgmodeNew)
-        {
-            switch (dbgmodeNew)
-            {
-                case DBGMODE.DBGMODE_Break:
-                    DbgBreak();
-                    break;
-                case DBGMODE.DBGMODE_Design:
-                    DbgStop();
-                    break;
-                case DBGMODE.DBGMODE_Run:
-                    DbgRun();
-                    break;
-            }
-            return 0;
-        }
 
         public void Start(ITransport transport)
         {
             if (_running)
                 return;
-
-            // Make the serial out active
-            _serialOutPane.Activate();
-
             _target = ATServiceProvider.GetService<STargetService, ITargetService>();
-           
             _debugTarget = _target.GetCurrentTarget();
+
             _pc = 0;
             _ramSpace = _debugTarget.Device.GetAddressSpace("data");
+            
+            _events.DebugEnter += EventsOnDebugEnter;
+            _events.MemoryChanged += EventsOnMemoryChanged;
+            _events.Start(_debugTarget);
 
+            _server.SetTransport(transport);
+            _server.UnknownData += ServerOnUnknownData;
             // Start the debug server
-            _server = new DebugServer(transport);
-            _server.DebuggerAttached += ServerOnDebuggerAttached;
-            _server.UnknownData += SerialOut;
             _server.Start();
-
-            // Setup the debug events handler
-            var vsDebugger = _serviceProvider.GetService(typeof(IVsDebugger)) as IVsDebugger;
-            vsDebugger?.AdviseDebuggerEvents(this, out _cookie);
-
-            _eventListener = new EventListener(_debugTarget, _server, _debugTarget.GetMemType("data"), _traceOutPane);
-            _eventListener.ContextSuspended = ContextSuspended;
-            _eventListener.ContextResumed = ContextResumed;
-
-            _channel = _debugTarget.KnownTool.GetChannel();
-            _services = _channel.GetRemoteServices().ToList();
-            _services.ForEach(service => _channel.AddEventListener(service, _eventListener));
-
-            _originalRCC = (IRunControlContext)ReflectionHelper.GetPropertyValue(_debugTarget, "RunControlContext");
-            _newRCC = new RunControlProxyWrapper(_originalRCC, _traceOutPane);
-            ReflectionHelper.SetPropertyValue(_debugTarget, _newRCC, "RunControlContext");
+            _output.Activate(Output.SDSerialOutputPane);
 
             _running = true;
         }
 
-        private void ContextResumed()
-        {
-            if (_contextResumedAction == null)
-                return;
-            _traceOutPane.OutputString("ContextResumed QUEUE\n");
-            TargetService.MainThreadDispatcher.BeginInvoke(new Action(() => {
-                _traceOutPane.OutputString("ContextResumed EXECUTE\n");
-                _contextResumedAction();
-                _contextResumedAction = null;
-            }), DispatcherPriority.Background, null);
-        }
-
-        private void ContextSuspended()
-        {
-            if (_contextSuspendedAction == null)
-                return;
-
-            _traceOutPane.OutputString("ContextSuspended QUEUE\n");
-            TargetService.MainThreadDispatcher.BeginInvoke(new Action(() => {
-                _traceOutPane.OutputString("ContextSuspended EXECUTE\n");
-                _contextSuspendedAction();
-                _contextSuspendedAction = null;
-            }), DispatcherPriority.Background, null);
-        }
-
-        public void Stop()
-        {
-            if (!_running)
-                return;
-
-            _server.Stop();
-            _server.DebuggerAttached -= ServerOnDebuggerAttached;
-            _server.UnknownData -= SerialOut;
-            _server = null;
-
-            ReflectionHelper.SetPropertyValue(_debugTarget, _originalRCC, "RunControlContext");
-            _target = null;
-            _debugTarget = null;
-            _originalRCC = null;
-            _newRCC = null;
-            _ramSpace = null;
-            _pc = 0;
-
-            var vsDebugger = _serviceProvider.GetService(typeof(IVsDebugger)) as IVsDebugger;
-            vsDebugger?.UnadviseDebuggerEvents(_cookie);
-            _cookie = 0;
-            
-            _services.ForEach(service => _channel.RemoveEventListener(service, _eventListener));
-            _running = false;
-        }
-
         public void Step()
         {
-            if (_server.InDebug && _contextResumedAction == null)
-            {
-                _traceOutPane.OutputString("STEP init\n");
-                _finishedEnterDebug = false;
-                _step = true;
-                _contextResumedAction = () =>
-                {
-                    // Tell the debug server to send the continue command
-                    _server.Step();
-                    _traceOutPane.OutputString("STEP\n");
-                };
-                // We don't want to update the RAM in run mode
-                _eventListener.SuspendUpdate();
-                
-                IStatus status;
-                _debugTarget.SDM_Step(1, out status);
-            }
+            _dte.Debugger.StepOver(false);
+            _server.Step();
         }
 
-        private byte[] WaitForCommand(IDebugCommand command)
+        public void Continue()
         {
-            var task = _server.AddCommand(command);
-            task.Wait();
-            return task.Result;
+            _dte.Debugger.Go(false);
+            _server.Continue();
         }
 
-        private void ServerOnDebuggerAttached()
+        private void ServerOnUnknownData(byte data)
         {
-            // Check if the signature matches
-            if (_debugTarget.Device.Signature != _server.DeviceSignature)
-            {
-                _debugTarget.ScriptInterface.DisplayDialogBox("Error", $"Mismatch signatures.\nFound 0x{_server.DeviceSignature} expected {_debugTarget.Device.Signature}\nDetaching...", (int)DialogIcon.Error);
-                DbgStop();
+            _output.SerialOut(Convert.ToChar(data) + "");
+        }
+
+        private void EventsOnMemoryChanged(string memId, long addr, long size)
+        {
+            if (memId != _debugTarget.GetMemType("data"))
                 return;
-            }
+            // The memory changed we need to update the physical device
+            MemoryError[] errRanges;
+            var data = _debugTarget.Memory.GetMemory(memId, (ulong) addr, 1, (int) size, 0, out errRanges);
+            _server.AddCommand(new DebugCommand_Ram_Write((uint) addr, data));
+        }
+
+        private void EventsOnDebugEnter()
+        {
             IStatus status;
             var ramData = WaitForCommand(new DebugCommand_Ram_Read((uint)_ramSpace.Start, (uint)_ramSpace.Size));
             if (_server.Caps.HasFlag(DebuggerCapabilities.CAPS_DBG_CTX_ADDR_BIT) &
@@ -208,97 +112,36 @@ namespace Microsoft.WPFWizardExample.SDebugger
                     ramData[i] = ramData[dbCtxAddr + i];
                 // Save the PC address
                 _pc = (uint)(ramData[dbCtxAddr + 35] << 8) + ramData[dbCtxAddr + 34];
-
-                _contextSuspendedAction = () =>
-                {
-                    // Setup the ram in the simulator with our hardware ram
-                    _debugTarget.Memory.SetMemory(_debugTarget.GetMemType("data"), _ramSpace.Start, 1, ramData.Length, 0, ramData, out status);
-                    // Set the pc location for the simulator
-                    _debugTarget.ScriptInterface.CalcValue($"$pc=0x{_pc * 2:X}");
-                    _debugTarget.NotifyTargetBreaked(
-                        new DebugTarget.TargetHaltedEventArgs(_pc * 2, "Extern Break", _debugTarget.ProcessesContextid, null)
-                    );
-                    _eventListener.ResumeUpdate();
-                    _finishedEnterDebug = true;
-                };
-            }
-            else
-            {
-                _contextSuspendedAction = () =>
-                {
-                    // Setup the ram in the simulator with our copy
-                    _debugTarget.Memory.SetMemory(_debugTarget.GetMemType("data"), _ramSpace.Start, 1, ramData.Length, 0, ramData, out status);
-                    _debugTarget.NotifyTargetBreaked(
-                        new DebugTarget.TargetHaltedEventArgs(_pc * 2, "Extern Break", _debugTarget.ProcessesContextid, null)
-                    );
-                    _eventListener.ResumeUpdate();
-                    _finishedEnterDebug = true;
-                };
+                _debugTarget.ScriptInterface.CalcValue($"$pc=0x{_pc * 2:X}");
             }
 
-            _eventListener.SuspendUpdate();
-            if (!_step)
-            {
-                _traceOutPane.OutputString("Continue\n");
-                // Suspend the target so we can update the state
-                _debugTarget.Suspend(out status);
-            }
-            else
-            {
-                _step = false;
-                _traceOutPane.OutputString("STEP done\n");
-            }
+            _debugTarget.Memory.SetMemory(_debugTarget.GetMemType("data"), _ramSpace.Start, 1, ramData.Length, 0, ramData, out status);
+            // Set the pc location for the simulator
+            _debugTarget.NotifyTargetBreaked(
+                new DebugTarget.TargetHaltedEventArgs(_pc * 2, "Extern Break", _debugTarget.ProcessesContextid, null)
+            );
         }
 
-        private void DbgRun()
+        public void Stop()
         {
-            if (_server.InDebug && _running && _finishedEnterDebug)
-            {
-                _finishedEnterDebug = false;
-                // We don't want to update the RAM in run mode
-                _eventListener.SuspendUpdate();
-                // Tell the debug server to send the continue command
-                _server.Continue();
-            }
+            if (!_running)
+                return;
+
+            _server.Stop();
+
+            _target = null;
+            _debugTarget = null;
+            _ramSpace = null;
+            _pc = 0;
+
+            _running = false;
         }
 
-        private void DbgStop()
+        protected byte[] WaitForCommand(IDebugCommand command)
         {
-            if (_running)
-                Stop();
-        }
-
-        private void DbgBreak()
-        {
-        }
-
-        private IVsOutputWindowPane InitializePane(ref Guid id, string title, bool visible, bool clearWithSolution)
-        {
-            var output = (IVsOutputWindow)_serviceProvider.GetService(typeof(SVsOutputWindow));
-            IVsOutputWindowPane pane;
-            output.GetPane(ref id, out pane);
-            if (pane == null)
-            {
-                // Create a new pane.  
-                output.CreatePane(
-                    ref id,
-                    title,
-                    Convert.ToInt32(visible),
-                    Convert.ToInt32(clearWithSolution));
-                // Retrieve the new pane.  
-                output.GetPane(ref id, out pane);
-            }
-            return pane;
-        }
-
-        private void SerialOut(byte data)
-        {
-            _serialOutPane?.OutputString(Convert.ToChar(data) + "");
-        }
-
-        private void TraceOut(string message)
-        {
-            _traceOutPane?.OutputString(message);
+            var task = _server.AddCommand(command);
+            task.Wait();
+            return task.Result;
         }
     }
 }

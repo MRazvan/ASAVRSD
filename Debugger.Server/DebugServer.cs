@@ -18,7 +18,7 @@ namespace Debugger.Server
     {
         private readonly BackgroundWorker _receiverWorker;
         private readonly BackgroundWorker _commandsWorker;
-        private readonly ITransport _transport;
+        private ITransport _transport;
         private DebuggerState _state;
 
         private readonly byte[] _debugPreambleBuffer = new byte[12];
@@ -55,7 +55,7 @@ namespace Debugger.Server
         private int _currentCommandReceiveIdx;
         private readonly byte[] _emptyCommandResponse = new byte[0];
 
-        public DebugServer(ITransport transport)
+        public DebugServer()
         {
             InDebug = false;
             Caps = DebuggerCapabilities.CAPS_RAM_R_BIT;
@@ -72,6 +72,10 @@ namespace Debugger.Server
 
             _commandsWorker = new BackgroundWorker {WorkerSupportsCancellation = true};
             _commandsWorker.DoWork += _commandsWorker_DoWork;
+        }
+
+        public void SetTransport(ITransport transport)
+        {
             _transport = transport;
         }
 
