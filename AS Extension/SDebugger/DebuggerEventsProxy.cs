@@ -4,12 +4,15 @@ using System.Threading;
 using Atmel.VsIde.AvrStudio.Services.TargetService;
 using Atmel.VsIde.AvrStudio.Services.TargetService.TCF.Protocol;
 using Debugger.Server;
+using System.Windows.Threading;
+using Microsoft.WPFWizardExample.SDebugger;
+using System.Reflection;
 
 namespace Microsoft.WPFWizardExample
 {
-    public delegate void ContextResumedDelegate();
+    public delegate void DebugLeaveDelegate();
 
-    public delegate void ContextSuspendedDelegate();
+    public delegate void DebugEnterDelegate();
 
     public delegate void MemoryChangedDelegate(string memId, long addr, long size);
 
@@ -23,8 +26,8 @@ namespace Microsoft.WPFWizardExample
             InDebug
         }
 
-        public event ContextResumedDelegate DebugLeave;
-        public event ContextSuspendedDelegate DebugEnter;
+        public event DebugLeaveDelegate DebugLeave;
+        public event DebugEnterDelegate DebugEnter;
         public event MemoryChangedDelegate MemoryChanged;
 
         private bool _updateSuspended;
@@ -32,9 +35,13 @@ namespace Microsoft.WPFWizardExample
         private readonly IDebugServer _server;
         private readonly CountdownEvent _suspendBarrier;
         private readonly Thread _notifyDebugEnterThread;
+        private Output _output;
 
-        public DebuggerEventsProxy(IDebugServer server)
+        public bool InDebug => _state == State.InDebug;
+
+        public DebuggerEventsProxy(IDebugServer server, Output output)
         {
+            _output = output;
             _server = server;
             _suspendBarrier = new CountdownEvent(2);
             _notifyDebugEnterThread = new Thread(HandleNotifyDebugEnter) {Name = "HandleNotifyDebugEnter"};
@@ -43,6 +50,7 @@ namespace Microsoft.WPFWizardExample
 
         public void Start(DebugTarget target)
         {
+            _updateSuspended = true;
             var channel = target.KnownTool.GetChannel();
             var services = channel.GetRemoteServices().ToList();
             services.ForEach(service => channel.AddEventListener(service, this));
@@ -69,6 +77,7 @@ namespace Microsoft.WPFWizardExample
 
         public void Event(string name, byte[] data)
         {
+            Write(MethodBase.GetCurrentMethod().Name + $"   {name}");
             switch (name)
             {
                 case "contextResumed":
@@ -77,25 +86,29 @@ namespace Microsoft.WPFWizardExample
                         _state = State.None;
                         _suspendBarrier.Signal(_suspendBarrier.CurrentCount);
                     }
+
                     _state = State.None;
                     _updateSuspended = true;
                     DebugLeave?.Invoke();
-                    return;
+                    break;
                 case "contextSuspended":
                     if (_state == State.InDebug)
-                        return;
+                        break;
                     _state = State.PartialEnterDebug;
                     _suspendBarrier.Signal();
-                    return;
+                    break;
                 case "memoryChanged":
                     object[] sequence = JSON.ParseSequence(data);
                     HandleMemoryChanged(sequence);
+                    if (_state == State.PartialEnterDebug)
+                        _state = State.InDebug;
                     break;
             }
         }
 
         private void Server_DebuggerAttached()
         {
+            Write(MethodBase.GetCurrentMethod().Name);
             if (_state == State.InDebug)
                 return;
             _state = State.PartialEnterDebug;
@@ -104,6 +117,7 @@ namespace Microsoft.WPFWizardExample
 
         private void HandleMemoryChanged(object[] sequence)
         {
+            Write(MethodBase.GetCurrentMethod().Name);
             if (_updateSuspended)
                 return;
 
@@ -129,6 +143,7 @@ namespace Microsoft.WPFWizardExample
 
             var memAddr = (long)properties["addr"];
             var memSize = (long)properties["size"];
+            Write(MethodBase.GetCurrentMethod().Name + " - Memory Changed");
             MemoryChanged?.Invoke(memId, memAddr, memSize);
         }
 
@@ -137,20 +152,24 @@ namespace Microsoft.WPFWizardExample
             while (true)
             {
                 _suspendBarrier.Wait();
-
+                _suspendBarrier.Reset();
+                Write(MethodBase.GetCurrentMethod().Name);
                 switch (_state)
                 {
                     case State.Stopping:
                         return;
                     case State.None:
-                        _suspendBarrier.Reset();
                         continue;
                 }
-                _state = State.InDebug;
+                Write(MethodBase.GetCurrentMethod().Name);
                 DebugEnter?.Invoke();
                 _updateSuspended = false;
-                _suspendBarrier.Reset();
             }
+        }
+
+        private void Write(string message)
+        {
+            _output.TraceOut(message + $"  - {_suspendBarrier.CurrentCount} - {_state}\n");
         }
     }
 }

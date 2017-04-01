@@ -64,5 +64,13 @@ namespace Microsoft.WPFWizardExample.SDebugger
         {
             _traceOutPane?.OutputStringThreadSafe(message);
         }
+
+        public void Clear(Guid id)
+        {
+            var output = (IVsOutputWindow)_serviceProvider.GetService(typeof(SVsOutputWindow));
+            IVsOutputWindowPane pane;
+            output.GetPane(ref id, out pane);
+            pane?.Clear();
+        }
     }
 }
