@@ -1,0 +1,169 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<CommandTable xmlns="http://schemas.microsoft.com/VisualStudio/2005-10-18/CommandTable" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <Extern href="stdidcmd.h" />
+  <Extern href="vsshlids.h" />
+  <Include href="KnownImageIds.vsct"/>    
+  
+    <Commands package="guidSoftwareDebuggerPkg">
+    
+    <Menus>
+        <Menu guid="guidSoftwareDebuggerCmdSet" id="TopLevelMenu" priority="0x700" type="Menu">
+            <Parent guid="guidSHLMainMenu" id="IDG_VS_MM_TOOLSADDINS" />
+            <Strings>
+                <ButtonText>Debugger</ButtonText>
+                <CommandName>Debugger</CommandName>
+            </Strings>
+        </Menu>
+    
+        <Menu guid="guidSoftwareDebuggerCmdSet" id="TopLevelMenuToolbar" priority="0x700" type="Toolbar">
+            <Parent guid="guidSHLMainMenu" id="IDG_VS_MM_TOOLSADDINS" />
+            <Strings>
+                <ButtonText>Software Debugger</ButtonText>
+                <CommandName>Software Debugger</CommandName>
+            </Strings>
+        </Menu>
+                
+    </Menus>
+
+    <Groups>
+      <Group guid="guidSoftwareDebuggerCmdSet" id="MyMenuGroup" priority="0x0600">
+        <Parent guid="guidSoftwareDebuggerCmdSet" id="TopLevelMenu" />
+      </Group>
+    
+      <Group guid="guidSoftwareDebuggerCmdSet" id="MyMenuGroupToolbar" priority="0x0600">
+        <Parent guid="guidSoftwareDebuggerCmdSet" id="TopLevelMenuToolbar" />
+      </Group>
+        
+    </Groups>
+    
+    <Buttons>
+        <Button guid="guidSoftwareDebuggerCmdSet" id="cmdAttach" priority="0x0100" type="Button">
+            <Parent guid="guidSoftwareDebuggerCmdSet" id="MyMenuGroup" />
+            <Icon guid="ImageCatalogGuid" id="Link" />
+            <CommandFlag>IconIsMoniker</CommandFlag>
+            <Strings>
+                <CommandName>cmdAttach</CommandName>
+                <ButtonText>Upload and Run</ButtonText>
+                <ToolTipText>Upload, Run and Attach to target</ToolTipText>
+            </Strings>
+        </Button>
+
+        <Button guid="guidSoftwareDebuggerCmdSet" id="cmdStep" priority="0x0100" type="Button">
+            <Parent guid="guidSoftwareDebuggerCmdSet" id="MyMenuGroup" />
+            <Icon guid="ImageCatalogGuid" id="StepInto" />
+            <CommandFlag>IconIsMoniker</CommandFlag>
+            <Strings>
+                <CommandName>cmdStep</CommandName>
+                <ButtonText>Step Into</ButtonText>
+            </Strings>
+        </Button>
+        
+        <Button guid="guidSoftwareDebuggerCmdSet" id="cmdContinue" priority="0x0100" type="Button">
+            <Parent guid="guidSoftwareDebuggerCmdSet" id="MyMenuGroup" />
+            <Icon guid="ImageCatalogGuid" id="Run" />
+            <CommandFlag>IconIsMoniker</CommandFlag>
+            <Strings>
+                <CommandName>cmdContinue</CommandName>
+                <ButtonText>Continue</ButtonText>
+            </Strings>
+        </Button>
+    
+        
+        <Button guid="guidSoftwareDebuggerCmdSet" id="cmdAttach" priority="0x0100" type="Button">
+            <Parent guid="guidSoftwareDebuggerCmdSet" id="MyMenuGroupToolbar" />
+            <Icon guid="ImageCatalogGuid" id="Link" />
+            <CommandFlag>IconIsMoniker</CommandFlag>
+            <Strings>
+                <CommandName>cmdAttach</CommandName>
+                <ButtonText>Attach</ButtonText>
+                <ToolTipText>Upload, Run and Attach to target</ToolTipText>
+            </Strings>
+        </Button>
+
+        <Button guid="guidSoftwareDebuggerCmdSet" id="cmdStep" priority="0x0100" type="Button">
+            <Parent guid="guidSoftwareDebuggerCmdSet" id="MyMenuGroupToolbar" />
+            <Icon guid="ImageCatalogGuid" id="StepInto" />
+            <CommandFlag>IconIsMoniker</CommandFlag>
+            <Strings>
+                <CommandName>cmdStep</CommandName>
+                <ButtonText>Step Into</ButtonText>
+            </Strings>
+        </Button>
+        
+        <Button guid="guidSoftwareDebuggerCmdSet" id="cmdContinue" priority="0x0100" type="Button">
+            <Parent guid="guidSoftwareDebuggerCmdSet" id="MyMenuGroupToolbar" />
+            <Icon guid="ImageCatalogGuid" id="Run" />
+            <CommandFlag>IconIsMoniker</CommandFlag>
+            <Strings>
+                <CommandName>cmdContinue</CommandName>
+                <ButtonText>Continue</ButtonText>
+            </Strings>
+        </Button>
+    
+    </Buttons>
+
+    <Combos>
+        <Combo type="DropDownCombo" guid="guidSoftwareDebuggerCmdSet" id="cmdSelectPort" priority="0x0200" defaultWidth="100" idCommandList="cmdSelectPortList">
+            <Parent guid="guidSoftwareDebuggerCmdSet" id="MyMenuGroup" />
+            <Strings>
+                <ButtonText>Port: </ButtonText>
+                <MenuText>Port: </MenuText>
+                <ToolTipText>Select Port Number</ToolTipText>
+                <CommandName>Port</CommandName>
+            </Strings>
+        </Combo>
+    
+        <Combo type="DropDownCombo" guid="guidSoftwareDebuggerCmdSet" id="cmdSelectPort" priority="0x0200" defaultWidth="100" idCommandList="cmdSelectPortList">
+            <Parent guid="guidSoftwareDebuggerCmdSet" id="MyMenuGroupToolbar" />
+            <Strings>
+                <ButtonText>Port: </ButtonText>
+                <MenuText>Port: </MenuText>
+                <ToolTipText>Select Port Number</ToolTipText>
+                <CommandName>Port</CommandName>
+            </Strings>
+        </Combo>
+
+        <Combo type="DynamicCombo" guid="guidSoftwareDebuggerCmdSet" id="cmdSelectBaud" priority="0x0200" defaultWidth="100" idCommandList="cmdSelectBaudList">
+            <Parent guid="guidSoftwareDebuggerCmdSet" id="MyMenuGroup" />
+            <Strings>
+                <ButtonText>Baud: </ButtonText>
+                <MenuText>Baud: </MenuText>
+                <ToolTipText>Select Baud speed</ToolTipText>
+                <CommandName>Baud</CommandName>
+            </Strings>
+        </Combo>
+
+        <Combo type="DynamicCombo" guid="guidSoftwareDebuggerCmdSet" id="cmdSelectBaud" priority="0x0200" defaultWidth="100" idCommandList="cmdSelectBaudList">
+            <Parent guid="guidSoftwareDebuggerCmdSet" id="MyMenuGroupToolbar" />
+            <Strings>
+                <ButtonText>Baud: </ButtonText>
+                <MenuText>Baud: </MenuText>
+                <ToolTipText>Select Baud speed</ToolTipText>
+                <CommandName>Baud</CommandName>
+            </Strings>
+        </Combo>
+    </Combos>
+  </Commands>
+
+
+  <Symbols>
+    <GuidSymbol name="guidSoftwareDebuggerPkg" value="{258c68ca-99da-4d20-ad47-55601b22a5d3}" />
+    <GuidSymbol name="guidSoftwareDebuggerCmdSet" value="{7ac80e00-2e20-40be-b83d-f11bf8cc7ee8}">
+        <IDSymbol name="TopLevelMenu" value="0x1000"/>
+        <IDSymbol name="MyMenuGroup" value="0x1020" />
+        <IDSymbol name="TopLevelMenuToolbar" value="0x1001"/>
+        <IDSymbol name="MyMenuGroupToolbar" value="0x1021" />
+        
+        <IDSymbol name="cmdAttach" value="0x0100" />
+        <IDSymbol name="cmdStep" value="0x0101" />
+        <IDSymbol name="cmdContinue" value="0x0102" />
+        <IDSymbol name="cmdSelectPort" value="0x103"/>
+        <IDSymbol name="cmdSelectPortList" value="0x104"/>
+
+        <IDSymbol name="cmdSelectBaud" value="0x105"/>
+        <IDSymbol name="cmdSelectBaudList" value="0x106"/>
+
+    </GuidSymbol> 
+  </Symbols>
+
+</CommandTable>

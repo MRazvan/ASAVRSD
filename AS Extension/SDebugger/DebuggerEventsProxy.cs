@@ -5,10 +5,10 @@ using Atmel.VsIde.AvrStudio.Services.TargetService;
 using Atmel.VsIde.AvrStudio.Services.TargetService.TCF.Protocol;
 using Debugger.Server;
 using System.Windows.Threading;
-using Microsoft.WPFWizardExample.SDebugger;
 using System.Reflection;
+using SoftwareDebuggerExtension.SDebugger;
 
-namespace Microsoft.WPFWizardExample
+namespace SoftwareDebuggerExtension
 {
     public delegate void DebugLeaveDelegate();
 
@@ -34,7 +34,7 @@ namespace Microsoft.WPFWizardExample
         private State _state;
         private readonly IDebugServer _server;
         private readonly CountdownEvent _suspendBarrier;
-        private readonly Thread _notifyDebugEnterThread;
+        private Thread _notifyDebugEnterThread;
         private Output _output;
 
         public bool InDebug => _state == State.InDebug;
@@ -44,7 +44,6 @@ namespace Microsoft.WPFWizardExample
             _output = output;
             _server = server;
             _suspendBarrier = new CountdownEvent(2);
-            _notifyDebugEnterThread = new Thread(HandleNotifyDebugEnter) {Name = "HandleNotifyDebugEnter"};
             _state = State.None;
         }
 
@@ -56,6 +55,8 @@ namespace Microsoft.WPFWizardExample
             services.ForEach(service => channel.AddEventListener(service, this));
 
             _suspendBarrier.Reset();
+
+            _notifyDebugEnterThread = new Thread(HandleNotifyDebugEnter) { Name = "HandleNotifyDebugEnter" };
             _notifyDebugEnterThread.Start();
             _server.DebuggerAttached += Server_DebuggerAttached;
         }
@@ -77,7 +78,7 @@ namespace Microsoft.WPFWizardExample
 
         public void Event(string name, byte[] data)
         {
-            Write(MethodBase.GetCurrentMethod().Name + $"   {name}");
+            DebugWrite(MethodBase.GetCurrentMethod().Name + $"   {name}");
             switch (name)
             {
                 case "contextResumed":
@@ -108,7 +109,7 @@ namespace Microsoft.WPFWizardExample
 
         private void Server_DebuggerAttached()
         {
-            Write(MethodBase.GetCurrentMethod().Name);
+            DebugWrite(MethodBase.GetCurrentMethod().Name);
             if (_state == State.InDebug)
                 return;
             _state = State.PartialEnterDebug;
@@ -117,7 +118,7 @@ namespace Microsoft.WPFWizardExample
 
         private void HandleMemoryChanged(object[] sequence)
         {
-            Write(MethodBase.GetCurrentMethod().Name);
+            DebugWrite(MethodBase.GetCurrentMethod().Name);
             if (_updateSuspended)
                 return;
 
@@ -143,8 +144,9 @@ namespace Microsoft.WPFWizardExample
 
             var memAddr = (long)properties["addr"];
             var memSize = (long)properties["size"];
-            Write(MethodBase.GetCurrentMethod().Name + " - Memory Changed");
-            MemoryChanged?.Invoke(memId, memAddr, memSize);
+            DebugWrite(MethodBase.GetCurrentMethod().Name + " - Memory Changed");
+            if (MemoryChanged != null)
+                TargetService.MainThreadDispatcher.BeginInvoke(MemoryChanged, DispatcherPriority.Background, memId, memAddr, memSize);
         }
 
         private void HandleNotifyDebugEnter()
@@ -153,7 +155,7 @@ namespace Microsoft.WPFWizardExample
             {
                 _suspendBarrier.Wait();
                 _suspendBarrier.Reset();
-                Write(MethodBase.GetCurrentMethod().Name);
+                DebugWrite(MethodBase.GetCurrentMethod().Name);
                 switch (_state)
                 {
                     case State.Stopping:
@@ -161,15 +163,15 @@ namespace Microsoft.WPFWizardExample
                     case State.None:
                         continue;
                 }
-                Write(MethodBase.GetCurrentMethod().Name);
+                DebugWrite(MethodBase.GetCurrentMethod().Name);
                 DebugEnter?.Invoke();
                 _updateSuspended = false;
             }
         }
 
-        private void Write(string message)
+        private void DebugWrite(string message)
         {
-            _output.TraceOut(message + $"  - {_suspendBarrier.CurrentCount} - {_state}\n");
+            _output.DebugOutLine(message + $"  - {_suspendBarrier.CurrentCount} - {_state}");
         }
     }
 }

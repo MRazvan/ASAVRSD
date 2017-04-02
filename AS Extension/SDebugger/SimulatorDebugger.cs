@@ -1,22 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
 using Atmel.Studio.Services;
 using Atmel.Studio.Services.Device;
 using Atmel.VsIde.AvrStudio.Services.TargetService;
-using Atmel.VsIde.AvrStudio.Services.TargetService.TCF.Core;
 using Debugger.Server;
 using Debugger.Server.Commands;
 using Microsoft.VisualStudio.Shell.Interop;
 using IServiceProvider = System.IServiceProvider;
-using System.Windows.Threading;
 using Atmel.VsIde.AvrStudio.Services.TargetService.TCF.Services;
-using Atmel.VsIde.AvrStudio.Services.TargetService.TCF.Services.RunControl;
 using EnvDTE;
 using System.Reflection;
 
-namespace Microsoft.WPFWizardExample.SDebugger
+namespace SoftwareDebuggerExtension.SDebugger
 {
     public class SimulatorDebugger
     {
@@ -25,8 +20,10 @@ namespace Microsoft.WPFWizardExample.SDebugger
             None,
             Continue,
             Step,
-            EnteringBreak
+            InDebug
         }
+
+        private static Dictionary<string, object> sEmptyContextData = new Dictionary<string, object>();
 
         private DebugTarget _debugTarget;
         private uint _pc;
@@ -39,17 +36,18 @@ namespace Microsoft.WPFWizardExample.SDebugger
         private DTE _dte;
         private State _state;
 
-        private bool CanRun => _dte.Debugger.CurrentMode == dbgDebugMode.dbgBreakMode && _events.InDebug && _server.InDebug;
+        public delegate void DebugStateChangedDelegate();
+        public event DebugStateChangedDelegate DebugStateChanged;
 
-        public SimulatorDebugger(IServiceProvider serviceProvider)
+        public bool CanRun =>  _events.InDebug && _server.InDebug && _state == State.InDebug;
+
+        public SimulatorDebugger(IServiceProvider serviceProvider, Output output)
         {
+            _output = output;
             _running = false;
             _dte = serviceProvider.GetService(typeof(SDTE)) as DTE;
-            _output = new Output(serviceProvider);
             _server = new DebugServer();
             _events = new DebuggerEventsProxy(_server, _output);
-            
-            _output.Initialize();
         }
 
 
@@ -76,11 +74,36 @@ namespace Microsoft.WPFWizardExample.SDebugger
             _server.Start();
             _output.Activate(Output.SDSerialOutputPane);
 
+            DebugStateChanged?.Invoke();
             _running = true;
         }
 
-        private void EventsOnDebugLeave()
+        public void Stop()
         {
+            if (!_running)
+                return;
+
+            _pc = 0;
+
+            _events.DebugLeave -= EventsOnDebugLeave;
+            _events.DebugEnter -= EventsOnDebugEnter;
+            _events.MemoryChanged -= EventsOnMemoryChanged;
+            _events.Stop(_debugTarget);
+
+            _server.UnknownData -= ServerOnUnknownData;
+            _server.DebuggerAttached -= ServerDebuggerAttached;
+            // Start the debug server
+            _server.Stop();
+
+            _debugTarget = null;
+            _target = null;
+            _state = State.None;
+            DebugStateChanged?.Invoke();
+            _running = false;
+        }
+
+        private void EventsOnDebugLeave()
+        { 
             if (_state == State.Continue)
             {
                 _server.Continue();
@@ -93,7 +116,7 @@ namespace Microsoft.WPFWizardExample.SDebugger
 
         private void ServerDebuggerAttached()
         {
-            _output.TraceOut(MethodBase.GetCurrentMethod().Name + " " + _dte.Debugger.CurrentMode + "\n");
+            DebugWrite(MethodBase.GetCurrentMethod().Name + " " + _dte.Debugger.CurrentMode + $" {_debugTarget.TargetState}");
             if (_state != State.Step)
             {
                 IStatus status;
@@ -103,23 +126,29 @@ namespace Microsoft.WPFWizardExample.SDebugger
 
         public void Step()
         {
-            _output.TraceOut(MethodBase.GetCurrentMethod().Name + " " + _dte.Debugger.CurrentMode + "\n");
             if (!CanRun)
                 return;
-            _output.Clear(Output.SDTraceOutputPane);
+            DebugWrite(MethodBase.GetCurrentMethod().Name + " " + _dte.Debugger.CurrentMode + $" {_debugTarget.TargetState}");
             _state = State.Step;
-            _dte.Debugger.StepInto(false);
+            IStatus status;
+            _debugTarget.SDM_Step(1, out status);
+            DebugStateChanged?.Invoke();
         }
 
         public void Continue()
         {
-            _output.TraceOut(MethodBase.GetCurrentMethod().Name + " " + _dte.Debugger.CurrentMode + "\n");
-
             if (!CanRun)
                 return;
-            _output.Clear(Output.SDTraceOutputPane);
+            DebugWrite(MethodBase.GetCurrentMethod().Name + " " + _dte.Debugger.CurrentMode + $" {_debugTarget.TargetState}");
             _state = State.Continue;
-            _dte.Debugger.Go(false);
+            IStatus status;
+            _debugTarget.Resume(0x0, 0x0, out status);
+            DebugStateChanged?.Invoke();
+        }
+
+        public void ResetTarget()
+        {
+            _server.ResetTarget();
         }
 
         private void ServerOnUnknownData(byte data)
@@ -129,7 +158,7 @@ namespace Microsoft.WPFWizardExample.SDebugger
 
         private void EventsOnMemoryChanged(string memId, long addr, long size)
         {
-            _output.TraceOut(MethodBase.GetCurrentMethod().Name + " " + _dte.Debugger.CurrentMode + "\n");
+            DebugWrite(MethodBase.GetCurrentMethod().Name + " " + _dte.Debugger.CurrentMode + $" {_debugTarget.TargetState}");
 
             if (memId != _debugTarget.GetMemType("data"))
                 return;
@@ -141,7 +170,7 @@ namespace Microsoft.WPFWizardExample.SDebugger
 
         private void EventsOnDebugEnter()
         {
-            _output.TraceOut(MethodBase.GetCurrentMethod().Name + " " + _dte.Debugger.CurrentMode + "\n");
+            DebugWrite(MethodBase.GetCurrentMethod().Name + " " + _dte.Debugger.CurrentMode + $" {_debugTarget.targetIsStopped}");
 
             IStatus status;
             var ramData = WaitForCommand(new DebugCommand_Ram_Read((uint)_ramSpace.Start, (uint)_ramSpace.Size));
@@ -161,24 +190,10 @@ namespace Microsoft.WPFWizardExample.SDebugger
             _debugTarget.Memory.SetMemory(_debugTarget.GetMemType("data"), _ramSpace.Start, 1, ramData.Length, 0, ramData, out status);
             // Set the pc location for the simulator
             _debugTarget.NotifyTargetBreaked(
-                new DebugTarget.TargetHaltedEventArgs(_pc * 2, "Extern Break", _debugTarget.ProcessesContextid, null)
+                new DebugTarget.TargetHaltedEventArgs(_pc * 2, "Extern Break", _debugTarget.ProcessesContextid, sEmptyContextData)
             );
-            _state = State.None;
-        }
-
-        public void Stop()
-        {
-            if (!_running)
-                return;
-
-            _server.Stop();
-
-            _target = null;
-            _debugTarget = null;
-            _ramSpace = null;
-            _pc = 0;
-
-            _running = false;
+            _state = State.InDebug;
+            DebugStateChanged?.Invoke();
         }
 
         protected byte[] WaitForCommand(IDebugCommand command)
@@ -186,6 +201,11 @@ namespace Microsoft.WPFWizardExample.SDebugger
             var task = _server.AddCommand(command);
             task.Wait();
             return task.Result;
+        }
+
+        private void DebugWrite(string message)
+        {
+            _output.DebugOutLine(message);
         }
     }
 }

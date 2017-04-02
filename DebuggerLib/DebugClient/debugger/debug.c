@@ -191,6 +191,9 @@
 #define DBG_SINGLE_STEP_ISR			2
 #define DBG_WILL_SINGLE_STEP		3
 
+
+#define INTERRUPT_FLAG_BIT			7
+
 //////////////////////////////////////////////////////////////////////////
 //	Debug data sent when entering debug, so we know we are debugging and what capabilities we have
 const uint8_t DEBUG_INFO[] PROGMEM = {DEBUG_COM_KEY_0, DEBUG_COM_KEY_1, DEBUG_COM_KEY_2, DEBUG_COM_KEY_3, DEBUG_COM_KEY_4, DEBUG_PROTOCOL_VERSION, SIGNATURE_0, SIGNATURE_1, SIGNATURE_2, CAPS_0, CAPS_1, DEBUG_COM_DATA_FILLER};
@@ -531,6 +534,12 @@ void dbg_send_info(){
 	}
 }
 
+INLINE
+ATTRIBUTES
+void dbg_disable_interrupts(){
+	dbg_context.status_reg &= ~_BV(INTERRUPT_FLAG_BIT);
+}
+
 #ifdef CAPS_SAVE_CTX
 	#ifdef CAPS_BREAK_ON_START
 		__attribute__ ((naked, optimize("-Os"), section(".init3")))
@@ -709,11 +718,15 @@ if (dbg_context.ctx_state & _BV(DBG_SINGLE_STEP_ISR)){
 			//		clear the flag and return from ISR
 			dbg_context.ctx_state &= ~_BV(DBG_SINGLE_STEP_ISR);
 		}
+		dbg_disable_interrupts();
 		dbg_leave_debug();
 		asm volatile ("reti \n\t");
 	}else if (dbg_context.ctx_state & _BV(DBG_WILL_SINGLE_STEP)){
 		dbg_context.ctx_state &= ~_BV(DBG_WILL_SINGLE_STEP);
 		dbg_context.ctx_state |= _BV(DBG_SINGLE_STEP_ISR);
+		dbg_disable_interrupts();
+		dbg_leave_debug();
+		asm volatile ("reti \n\t");
 	}
 #endif
 	// Leave debug and set back the status register

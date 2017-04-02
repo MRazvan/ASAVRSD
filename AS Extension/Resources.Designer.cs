@@ -8,7 +8,7 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace Microsoft.WPFWizardExample {
+namespace SoftwareDebuggerExtension {
     using System;
     
     
@@ -39,7 +39,7 @@ namespace Microsoft.WPFWizardExample {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Microsoft.WPFWizardExample.Resources", typeof(Resources).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("SoftwareDebuggerExtension.Resources", typeof(Resources).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -57,6 +57,78 @@ namespace Microsoft.WPFWizardExample {
             }
             set {
                 resourceCulture = value;
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Both in and out parameters should not be specified.
+        /// </summary>
+        internal static string BothInOutParamsIllegal {
+            get {
+                return ResourceManager.GetString("BothInOutParamsIllegal", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Empty string is not accepted.
+        /// </summary>
+        internal static string EmptyStringIllegal {
+            get {
+                return ResourceManager.GetString("EmptyStringIllegal", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to EventArgs are required.
+        /// </summary>
+        internal static string EventArgsRequired {
+            get {
+                return ResourceManager.GetString("EventArgsRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Both in and out parameters can not be NULL.
+        /// </summary>
+        internal static string InOutParamCantBeNULL {
+            get {
+                return ResourceManager.GetString("InOutParamCantBeNULL", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to In parameter may not be specified.
+        /// </summary>
+        internal static string InParamIllegal {
+            get {
+                return ResourceManager.GetString("InParamIllegal", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Value should be between 0 and {0}.
+        /// </summary>
+        internal static string InvalidIndex {
+            get {
+                return ResourceManager.GetString("InvalidIndex", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Out parameter can not be NULL.
+        /// </summary>
+        internal static string OutParamRequired {
+            get {
+                return ResourceManager.GetString("OutParamRequired", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Parameter must be valid string in list.
+        /// </summary>
+        internal static string ParamNotValidStringInList {
+            get {
+                return ResourceManager.GetString("ParamNotValidStringInList", resourceCulture);
             }
         }
     }

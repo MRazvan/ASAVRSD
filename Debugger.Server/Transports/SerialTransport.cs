@@ -51,5 +51,10 @@ namespace Debugger.Server.Transports
             _byteBuffer[0] = data;
             Write(_byteBuffer);
         }
+
+        public void ResetTarget()
+        {
+            _serial.DtrEnable = true;
+        }
     }
 }

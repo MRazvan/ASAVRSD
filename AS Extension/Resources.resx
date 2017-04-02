@@ -126,4 +126,28 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+   <data name="BothInOutParamsIllegal" xml:space="preserve">
+    <value>Both in and out parameters should not be specified</value>
+  </data>
+  <data name="EmptyStringIllegal" xml:space="preserve">
+    <value>Empty string is not accepted</value>
+  </data>
+  <data name="EventArgsRequired" xml:space="preserve">
+    <value>EventArgs are required</value>
+  </data>
+  <data name="InOutParamCantBeNULL" xml:space="preserve">
+    <value>Both in and out parameters can not be NULL</value>
+  </data>
+  <data name="InParamIllegal" xml:space="preserve">
+    <value>In parameter may not be specified</value>
+  </data>
+  <data name="InvalidIndex" xml:space="preserve">
+    <value>Value should be between 0 and {0}</value>
+  </data>
+    <data name="ParamNotValidStringInList" xml:space="preserve">
+    <value>Parameter must be valid string in list</value>
+  </data>
+    <data name="OutParamRequired" xml:space="preserve">
+    <value>Out parameter can not be NULL</value>
+  </data>    
 </root>

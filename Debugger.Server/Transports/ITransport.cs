@@ -9,5 +9,6 @@
         byte ReadByte();
         void WriteByte(byte data);
         void Write(byte[] buffer);
+        void ResetTarget();
     }
 }

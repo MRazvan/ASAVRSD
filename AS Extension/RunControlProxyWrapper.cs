@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Atmel.Studio.Services;
 using Microsoft.VisualStudio.Shell.Interop;
 
-namespace Microsoft.WPFWizardExample
+namespace SoftwareDebuggerExtension
 {
     class RunControlProxyWrapper : IRunControlContext
     {

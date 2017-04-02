@@ -5,17 +5,19 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.VisualStudio.Shell.Interop;
 
-namespace Microsoft.WPFWizardExample.SDebugger
+namespace SoftwareDebuggerExtension.SDebugger
 {
     public class Output
     {
         public static Guid SDSerialOutputPane = Guid.Parse("{9F79FB17-B312-4050-90D4-A90D335ABFD8}");
         public static Guid SDTraceOutputPane = Guid.Parse("{1FFE1F93-F2A8-4BC6-B83B-B88E6DD52FD8}");
+        public static Guid SDDebugOutputPane = Guid.Parse("{632DD33E-25B3-4681-9D34-95971CC51FCF}");
 
 
         private readonly IServiceProvider _serviceProvider;
         private IVsOutputWindowPane _serialOutPane;
         private IVsOutputWindowPane _traceOutPane;
+        private IVsOutputWindowPane _debugOutPane;
 
         public Output(IServiceProvider serviceProvider)
         {
@@ -26,6 +28,7 @@ namespace Microsoft.WPFWizardExample.SDebugger
         {
             _serialOutPane = InitializePane(ref SDSerialOutputPane, "SD Serial Output", true, true);
             _traceOutPane = InitializePane(ref SDTraceOutputPane, "SD Trace Output", true, true);
+            _debugOutPane = InitializePane(ref SDDebugOutputPane, "SD Debug Output", true, true);
         }
 
         public void Activate(Guid id)
@@ -63,6 +66,16 @@ namespace Microsoft.WPFWizardExample.SDebugger
         public void TraceOut(string message)
         {
             _traceOutPane?.OutputStringThreadSafe(message);
+        }
+
+        public void DebugOut(string message)
+        {
+            _debugOutPane?.OutputStringThreadSafe(message);
+        }
+
+        public void DebugOutLine(string message)
+        {
+            _debugOutPane?.OutputStringThreadSafe(message + "\n");
         }
 
         public void Clear(Guid id)

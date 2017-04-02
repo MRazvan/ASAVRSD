@@ -2,7 +2,7 @@
 
 <Vsix Version="1.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2010">
     <Identifier Id="258c68ca-99da-4d20-ad47-55601b22a5d3">
-        <Name>WPFWizardExample</Name>
+        <Name>SoftwareDebuggerExtension</Name>
         <Author>Microsoft</Author>
         <Version>1.0</Version>
         <Description xml:space="preserve">Sample code to demonstrate SDK wizard</Description>

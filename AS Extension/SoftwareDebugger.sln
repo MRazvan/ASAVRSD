@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WPFWizardExample", "WPFWizardExample.csproj", "{E156D374-1B41-437D-8A2C-5BE437219D0C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SoftwareDebuggerExtension", "SoftwareDebuggerExtension.csproj", "{E156D374-1B41-437D-8A2C-5BE437219D0C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Debugger.Server", "..\Debugger.Server\Debugger.Server.csproj", "{08D43202-8288-41AD-8ADD-DD69A5CE6DC6}"
 EndProject

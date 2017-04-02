@@ -39,6 +39,7 @@ void _uart_write_str(char* str){
 		_uart_put_ch(*str++);
 	}
 }
+
 volatile uint16_t count = 0;
 int main(void)
 {

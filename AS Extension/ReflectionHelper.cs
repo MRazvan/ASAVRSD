@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Reflection;
 
-namespace Microsoft.WPFWizardExample
+namespace SoftwareDebuggerExtension
 {
     public static class ReflectionHelper
     {

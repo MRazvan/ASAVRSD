@@ -111,6 +111,11 @@ namespace Debugger.Server
             _transport.Write(command.CommandBuffer);
         }
 
+        public void ResetTarget()
+        {
+            _transport?.ResetTarget();
+        }
+
         private void _commandsWorker_DoWork(object sender, DoWorkEventArgs e)
         {
             while (!_commandsWorker.CancellationPending)
