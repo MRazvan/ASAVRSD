@@ -66,6 +66,8 @@
     <CopyVsixExtensionLocation>D:\Atmel\Studio\7.0\Extensions\TestExtension</CopyVsixExtensionLocation>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Atmel.Studio.Toolchain.Interfaces, Version=7.0.0.0, Culture=neutral, PublicKeyToken=d264112969646cc9" />
+    <Reference Include="Atmel.Studio.Toolchain.Library, Version=7.0.0.0, Culture=neutral, PublicKeyToken=d264112969646cc9, processorArchitecture=MSIL" />
     <Reference Include="envdte, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </Reference>
@@ -170,6 +172,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Commands.cs" />
+    <Compile Include="OptionsViewModel.cs" />
+    <Compile Include="ProjectInfo.cs" />
     <Compile Include="ReflectionHelper.cs" />
     <Compile Include="RunControlProxyWrapper.cs" />
     <Compile Include="Guids.cs" />
@@ -182,10 +186,13 @@
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
     <Compile Include="GlobalSuppressions.cs" />
+    <Compile Include="Settings.xaml.cs">
+      <DependentUpon>Settings.xaml</DependentUpon>
+    </Compile>
     <Compile Include="SoftwareDebuggerPackage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PkgCmdID.cs" />
-    <Compile Include="VSOutWindowListener.cs" />
+    <Compile Include="VSTraceListener.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Resources.resx">
@@ -239,6 +246,12 @@
       <Project>{08d43202-8288-41ad-8add-dd69a5ce6dc6}</Project>
       <Name>Debugger.Server</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="Settings.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <PropertyGroup>
     <UseCodebase>true</UseCodebase>

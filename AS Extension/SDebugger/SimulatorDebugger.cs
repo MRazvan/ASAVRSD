@@ -10,6 +10,7 @@ using IServiceProvider = System.IServiceProvider;
 using Atmel.VsIde.AvrStudio.Services.TargetService.TCF.Services;
 using EnvDTE;
 using System.Reflection;
+using System.Windows.Threading;
 
 namespace SoftwareDebuggerExtension.SDebugger
 {
@@ -160,6 +161,8 @@ namespace SoftwareDebuggerExtension.SDebugger
         {
             DebugWrite(MethodBase.GetCurrentMethod().Name + " " + _dte.Debugger.CurrentMode + $" {_debugTarget.TargetState}");
 
+            if (!_server.Caps.HasFlag(DebuggerCapabilities.CAPS_RAM_R_BIT))
+                return;
             if (memId != _debugTarget.GetMemType("data"))
                 return;
             // The memory changed we need to update the physical device
@@ -186,14 +189,19 @@ namespace SoftwareDebuggerExtension.SDebugger
                 _pc = (uint)(ramData[dbCtxAddr + 35] << 8) + ramData[dbCtxAddr + 34];
                 _debugTarget.ScriptInterface.CalcValue($"$pc=0x{_pc * 2:X}");
             }
-
+            else
+            {
+                _pc = (uint)_debugTarget.ScriptInterface.CalcNumericValue("$pc", 0) / 2;
+            }
             _debugTarget.Memory.SetMemory(_debugTarget.GetMemType("data"), _ramSpace.Start, 1, ramData.Length, 0, ramData, out status);
+            TargetService.MainThreadDispatcher.BeginInvoke(new Action(() => {
+                _debugTarget.NotifyTargetBreaked(
+                    new DebugTarget.TargetHaltedEventArgs(_pc * 2, "Extern Break", _debugTarget.ProcessesContextid, sEmptyContextData)
+                );
+                _state = State.InDebug;
+                DebugStateChanged?.Invoke();
+            }), DispatcherPriority.Background, Array.Empty<object>());
             // Set the pc location for the simulator
-            _debugTarget.NotifyTargetBreaked(
-                new DebugTarget.TargetHaltedEventArgs(_pc * 2, "Extern Break", _debugTarget.ProcessesContextid, sEmptyContextData)
-            );
-            _state = State.InDebug;
-            DebugStateChanged?.Invoke();
         }
 
         protected byte[] WaitForCommand(IDebugCommand command)

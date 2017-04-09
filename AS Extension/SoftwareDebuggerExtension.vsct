@@ -67,8 +67,17 @@
                 <ButtonText>Continue</ButtonText>
             </Strings>
         </Button>
-    
-        
+
+        <Button guid="guidSoftwareDebuggerCmdSet" id="cmdOptions" priority="0x0300" type="Button">
+            <Parent guid="guidSoftwareDebuggerCmdSet" id="MyMenuGroup" />
+            <Icon guid="ImageCatalogGuid" id="Settings" />
+            <CommandFlag>IconIsMoniker</CommandFlag>
+            <Strings>
+                <CommandName>cmdOptions</CommandName>
+                <ButtonText>Options</ButtonText>
+            </Strings>
+        </Button>
+
         <Button guid="guidSoftwareDebuggerCmdSet" id="cmdAttach" priority="0x0100" type="Button">
             <Parent guid="guidSoftwareDebuggerCmdSet" id="MyMenuGroupToolbar" />
             <Icon guid="ImageCatalogGuid" id="Link" />
@@ -98,8 +107,8 @@
                 <CommandName>cmdContinue</CommandName>
                 <ButtonText>Continue</ButtonText>
             </Strings>
-        </Button>
-    
+        </Button>       
+        
     </Buttons>
 
     <Combos>
@@ -162,6 +171,8 @@
 
         <IDSymbol name="cmdSelectBaud" value="0x105"/>
         <IDSymbol name="cmdSelectBaudList" value="0x106"/>
+
+        <IDSymbol name="cmdOptions" value="0x107"/>
 
     </GuidSymbol> 
   </Symbols>

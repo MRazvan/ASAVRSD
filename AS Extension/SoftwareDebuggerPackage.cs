@@ -53,7 +53,6 @@ namespace SoftwareDebuggerExtension
         // Overriden Package Implementation
 
         #region Package Members
-
         /// <summary>
         ///     Initialization of the package; this method is called right after the package is sited, so this is the place
         ///     where you can put all the initilaization code that rely on services provided by VisualStudio.
@@ -68,12 +67,22 @@ namespace SoftwareDebuggerExtension
             _commands.RunAndAttach += RunAndAttachCallback;
             _commands.Step += StepCallback;
             _commands.Continue += ContinueCallback;
+            _commands.ShowOptions += ShowOptions;
             _output = new Output(this);
             _output.Initialize();
-            //Trace.Listeners.Add(new VSOutWindowListener(_output));
+            Trace.Listeners.Add(new VSTraceListener(_output));
             _debugger = new SimulatorDebugger(this, _output);
             _debugger.DebugStateChanged += () => _commands.SetDebugState(_debugger.CanRun);
             _dte = GetService(typeof(SDTE)) as DTE;
+        }
+
+        private void ShowOptions()
+        {
+            var settings = new Settings();
+            settings.SetArduinoPath(string.Empty);
+            settings.SetProjectDefines(new System.Collections.Generic.List<string> { "CAPS_SAVE_CTX" });
+            settings.Owner = System.Windows.Application.Current.MainWindow;
+            settings.ShowDialog();
         }
 
         private void ContinueCallback()
@@ -86,12 +95,47 @@ namespace SoftwareDebuggerExtension
             _debugger.Step();
         }
 
-        private static string AVRDude = @"D:\arduino-1.8.1\hardware\tools\avr\bin\avrdude.exe";
-        private static string AVRDudeConfig = @"D:\\arduino-1.8.1\\hardware\\tools\\avr\\etc\\avrdude.conf";
-        private static string ProjectOutput = @"D:\\GIT\\ASAVRSD\\DebuggerLib\\DebugClient\\Debug\\DebugClient.hex";
+        private string GetArduinoIDE()
+        {
+            return @"D:\arduino-1.8.1\";
+        }
+
+        private void Alert(string text, string header)
+        {
+            ATServiceProvider.DialogService.ShowDialog(null, text, header, DialogButtonSet.Ok, DialogIcon.Exclamation);
+        }
 
         private void RunAndAttachCallback()
         {
+            var proj = _dte.ActiveSolutionProjects[0] as Project;
+            if (proj == null)
+            {
+                Alert("There is no active project", "Error");
+                return;
+            }
+
+            var pi = new ProjectInfo(proj);
+            if (string.IsNullOrWhiteSpace(pi.OutputPath))
+            {
+                Alert("The active project has no output path", "Error");
+                return;
+            }
+            if (!pi.IsExecutable)
+            {
+                Alert("The active project is not executable", "Error");
+                return;
+            }
+            if (pi.ToolName != "Simulator")
+            {
+                Alert("The active project must have Simulator selected as a tool", "Error");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(_commands.Port))
+            {
+                Alert("No com port selected\nPlease select a com port and try again", "Error");
+                return;
+            }
+
             // Start a build / upload the program, start the debugger and reset the target, 4 steps to debug :|
             _output.Activate(VSConstants.OutputWindowPaneGuid.BuildOutputPane_guid);
             _dte.Solution.SolutionBuild.Build(true);
@@ -102,12 +146,12 @@ namespace SoftwareDebuggerExtension
             var prog = new System.Diagnostics.Process();
             prog.StartInfo = new ProcessStartInfo
             {
-                FileName = AVRDude,
+                FileName = $"{GetArduinoIDE()}hardware\\tools\\avr\\bin\\avrdude.exe",
                 CreateNoWindow = true,
                 UseShellExecute = false,
                 RedirectStandardError = true,
                 RedirectStandardOutput = true,
-                Arguments = $"\"-C{AVRDudeConfig}\" -v -patmega328p -carduino -P{_commands.Port} -b57600 -D -Uflash:w:\"{ProjectOutput}\":i"
+                Arguments = $"\"-C{GetArduinoIDE()}hardware\\tools\\avr\\etc\\avrdude.conf\" -v -p{pi.Device?.Name.ToLower()} -carduino -P{_commands.Port} -b57600 -D -Uflash:w:\"{pi.OutputPath}\":i"
             };
             prog.EnableRaisingEvents = true;
             prog.OutputDataReceived += (sender, e) => _output.DebugOutLine(e.Data);

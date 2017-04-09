@@ -51,7 +51,7 @@
 
 //////////////////////////////////////////////////////////////////////////
 //	Save the registers (R0...R31), the return PC address (from stack) and the stack pointer
-#define CAPS_SAVE_CTX
+//#define CAPS_SAVE_CTX
 
 //////////////////////////////////////////////////////////////////////////
 //	Enable flash read so we can read the program from memory
@@ -111,7 +111,9 @@
 #ifdef CAPS_SINGLE_STEP
 	#define CAPS_FLAG_SINGLE_STEP _BV(CAPS_SINGLE_STEP_BIT)
 	#define CAPS_DBG_CTX_ADDR
-	#define CAPS_SAVE_CTX
+	#ifndef CAPS_SAVE_CTX
+		#define CAPS_SAVE_CTX
+	#endif
 	//#define CAPS_SET_PC
 #else
 	#define CAPS_FLAG_SINGLE_STEP 0

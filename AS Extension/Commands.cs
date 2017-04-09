@@ -1,6 +1,4 @@
-﻿using Atmel.Studio.Services;
-using Atmel.VsIde.AvrStudio.Services.TargetService;
-using Microsoft.VisualStudio.Shell;
+﻿using Microsoft.VisualStudio.Shell;
 using System;
 using System.ComponentModel.Design;
 using System.IO.Ports;
@@ -14,6 +12,7 @@ namespace SoftwareDebuggerExtension
         public delegate void RunAndAttachDelegate();
         public delegate void StepDelegate();
         public delegate void ContinueDelegate();
+        public delegate void ShowOptionsDelegate();
 
         private readonly IServiceProvider _serviceProvider;
         private string[] _ports;
@@ -24,10 +23,11 @@ namespace SoftwareDebuggerExtension
         private int _selectedBaud;
         private OleMenuCommand _stepCommand;
         private OleMenuCommand _continueCommand;
-
+        
         public event RunAndAttachDelegate RunAndAttach;
         public event StepDelegate Step;
         public event ContinueDelegate Continue;
+        public event ShowOptionsDelegate ShowOptions;
 
         public int BaudRate => _selectedBaud;
         public string Port => _selectedPort;
@@ -61,8 +61,15 @@ namespace SoftwareDebuggerExtension
 
                 mcs.AddCommand(new OleMenuCommand(OnBaudDropDownCombo, new CommandID(GuidList.guidSoftwareDebuggerCmdSet, (int)PkgCmdIDList.cmdSelectBaud)));
                 mcs.AddCommand(new OleMenuCommand(OnBaudDropDownComboList, new CommandID(GuidList.guidSoftwareDebuggerCmdSet, (int)PkgCmdIDList.cmdSelectBaudList)));
+
+                mcs.AddCommand(new OleMenuCommand(OnOptions, new CommandID(GuidList.guidSoftwareDebuggerCmdSet, (int)PkgCmdIDList.cmdOptions)));
             }
             _continueCommand.Enabled = _stepCommand.Enabled = false;
+        }
+
+        private void OnOptions(object sender, EventArgs e)
+        {
+            ShowOptions?.Invoke();
         }
 
         public void SetDebugState(bool inDebug)
@@ -113,6 +120,7 @@ namespace SoftwareDebuggerExtension
                 }
             }
         }
+
         private void OnPortDropDownCombo(object sender, EventArgs e)
         {
             OleMenuCmdEventArgs eventArgs = e as OleMenuCmdEventArgs;
