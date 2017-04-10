@@ -19,15 +19,15 @@ namespace SoftwareDebuggerExtension
 
         public delegate void StepDelegate();
 
-        private readonly IServiceProvider _serviceProvider;
-
         private readonly string[] _bauds = {"9600", "14400", "19200", "28800", "38400", "57600", "115200", "500000"};
+
+        private readonly IServiceProvider _serviceProvider;
+        private OleMenuCommand _attachCommand;
         private OleMenuCommand _continueCommand;
         private string[] _ports;
         private int _selectedBaud;
         private string _selectedBaudString;
         private OleMenuCommand _stepCommand;
-        private OleMenuCommand _attachCommand;
 
         public Commands(IServiceProvider serviceProvider)
         {
@@ -86,9 +86,7 @@ namespace SoftwareDebuggerExtension
         {
             _stepCommand.Enabled = _continueCommand.Enabled = server.CanRun;
             if (!server.DebugServer.Caps.HasFlag(DebuggerCapabilities.CAPS_SINGLE_STEP_BIT))
-            {
                 _stepCommand.Enabled = false;
-            }
         }
 
         private void ContinueCallback(object sender, EventArgs e)
@@ -159,7 +157,7 @@ namespace SoftwareDebuggerExtension
                         Port = _ports[indexInput];
                     else
                         throw new ArgumentException(Resources.ParamNotValidStringInList);
-                            // force an exception to be thrown
+                    // force an exception to be thrown
                 }
             }
             else

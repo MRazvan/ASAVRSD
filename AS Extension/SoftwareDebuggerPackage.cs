@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -39,11 +37,11 @@ namespace SoftwareDebuggerExtension
     public sealed class SoftwareDebuggerPackage : Package
     {
         private Commands _commands;
-        private SolutionEventsListener _solutionListener;
         private SimulatorDebugger _debugger;
         private DTE _dte;
         private Output _output;
-        
+        private SolutionEventsListener _solutionListener;
+
         /// <summary>
         ///     Default constructor of the package.
         ///     Inside this method you can place any initialization code that does not require
@@ -69,7 +67,7 @@ namespace SoftwareDebuggerExtension
         {
             Trace.WriteLine(string.Format(CultureInfo.CurrentCulture, "Entering Initialize() of: {0}", ToString()));
             base.Initialize();
-            
+
             // Add our command handlers for menu (commands must exist in the .vsct file)
             _commands = new Commands(this);
             _commands.Initialize();
@@ -177,13 +175,17 @@ namespace SoftwareDebuggerExtension
 
             if (!File.Exists(Settings.AvrDudeConfigFullPath))
             {
-                Alert("The Arduino location path might be invalid\nAVR Dude configuration file was not found\nGo to Debugger Options", "Error");
+                Alert(
+                    "The Arduino location path might be invalid\nAVR Dude configuration file was not found\nGo to Debugger Options",
+                    "Error");
                 return false;
             }
 
             if (!File.Exists(Settings.AvrDudeFullPath))
             {
-                Alert("The Arduino location path might be invalid\nAVR Dude executable was not found\nGo to Debugger Options", "Error");
+                Alert(
+                    "The Arduino location path might be invalid\nAVR Dude executable was not found\nGo to Debugger Options",
+                    "Error");
                 return false;
             }
 
@@ -219,7 +221,8 @@ namespace SoftwareDebuggerExtension
                 UseShellExecute = false,
                 RedirectStandardError = true,
                 RedirectStandardOutput = true,
-                Arguments = $"\"-C{Settings.AvrDudeConfigFullPath}\" -v -p{pi.Device?.Name.ToLower()} -carduino -P{_commands.Port} -b57600 -D -Uflash:w:\"{pi.OutputPath}\":i"
+                Arguments =
+                    $"\"-C{Settings.AvrDudeConfigFullPath}\" -v -p{pi.Device?.Name.ToLower()} -carduino -P{_commands.Port} -b57600 -D -Uflash:w:\"{pi.OutputPath}\":i"
             };
             prog.EnableRaisingEvents = true;
             prog.OutputDataReceived += (sender, e) => _output.DebugOutLine(e.Data);

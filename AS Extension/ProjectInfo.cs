@@ -79,13 +79,11 @@ namespace SoftwareDebuggerExtension
                     destination.Add(define);
                 }
             foreach (var define in removedDefines)
-            {
                 while (destination.Contains(define))
                 {
                     destination.Remove(define);
                     changed = true;
                 }
-            }
             var tmp = destination.Distinct().ToList();
             destination.Clear();
             tmp.ForEach(destination.Add);

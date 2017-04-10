@@ -17,10 +17,10 @@ namespace SoftwareDebuggerExtension.SDebugger
 
     internal class DebuggerEventsProxy : IEventListener
     {
+        private readonly Output _output;
         private readonly IDebugServer _server;
         private readonly CountdownEvent _suspendBarrier;
         private Thread _notifyDebugEnterThread;
-        private readonly Output _output;
         private State _state;
 
         private bool _updateSuspended;

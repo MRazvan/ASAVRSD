@@ -14,18 +14,6 @@ namespace SoftwareDebuggerExtension.ExtensionConfiguration
         public const string AVRDudePath = "hardware\\tools\\avr\\bin\\avrdude.exe";
         public const string AVRDudeConfig = "hardware\\tools\\avr\\etc\\avrdude.conf";
 
-        public static string AvrDudeFullPath => Path.Combine(Instance.ExtensionSettings.ArduinoIdeLocation, AVRDudePath);
-        public static string AvrDudeConfigFullPath => Path.Combine(Instance.ExtensionSettings.ArduinoIdeLocation, AVRDudeConfig);
-
-        public class DebuggingCapsStrings
-        {
-            public const string RamWrite = "CAPS_RAM_WRITE";
-            public const string SaveContext = "CAPS_SAVE_CTX";
-            public const string EEPROMRead = "CAPS_EEPROM_READ";
-            public const string EEPROMWrite = "CAPS_EEPROM_WRITE";
-            public const string SingleStep = "CAPS_SINGLE_STEP";
-        }
-
         public static List<string> DebuggingCaps = new List<string>
         {
             DebuggingCapsStrings.RamWrite,
@@ -34,11 +22,6 @@ namespace SoftwareDebuggerExtension.ExtensionConfiguration
             DebuggingCapsStrings.EEPROMWrite,
             DebuggingCapsStrings.SingleStep
         };
-
-        public static Settings Instance { get; private set; }
-        public ExtensionSettings ExtensionSettings { get; private set; }
-        public SolutionSettings SolutionSettings { get; private set; }
-        public bool SolutionSettingsLoaded { get; set; }
 
         static Settings()
         {
@@ -51,6 +34,17 @@ namespace SoftwareDebuggerExtension.ExtensionConfiguration
             LoadOrCreateExtensionSettings();
             SolutionSettingsLoaded = false;
         }
+
+        public static string AvrDudeFullPath => Path.Combine(Instance.ExtensionSettings.ArduinoIdeLocation, AVRDudePath)
+        ;
+
+        public static string AvrDudeConfigFullPath
+            => Path.Combine(Instance.ExtensionSettings.ArduinoIdeLocation, AVRDudeConfig);
+
+        public static Settings Instance { get; }
+        public ExtensionSettings ExtensionSettings { get; private set; }
+        public SolutionSettings SolutionSettings { get; private set; }
+        public bool SolutionSettingsLoaded { get; set; }
 
         public void LoadExtensionSettings()
         {
@@ -70,7 +64,7 @@ namespace SoftwareDebuggerExtension.ExtensionConfiguration
             catch (Exception ex)
             {
                 VSTraceListener.Instance.LogException("Error saving extension settings", ex);
-                ExtensionSettings = new ExtensionSettings() { ArduinoIdeLocation = string.Empty };
+                ExtensionSettings = new ExtensionSettings {ArduinoIdeLocation = string.Empty};
             }
         }
 
@@ -87,12 +81,10 @@ namespace SoftwareDebuggerExtension.ExtensionConfiguration
                 var directory = Path.GetDirectoryName(solution.FullName);
                 var settingsFile = Path.Combine(directory, SolutionConfigName);
                 if (File.Exists(settingsFile))
-                {
                     using (var sr = new StreamReader(settingsFile))
                     {
                         SolutionSettings = JsonConvert.DeserializeObject<SolutionSettings>(sr.ReadToEnd());
                     }
-                }
             }
             catch (Exception ex)
             {
@@ -131,7 +123,7 @@ namespace SoftwareDebuggerExtension.ExtensionConfiguration
             {
                 if (!File.Exists(settingsFile))
                 {
-                    ExtensionSettings = new ExtensionSettings() {ArduinoIdeLocation = string.Empty};
+                    ExtensionSettings = new ExtensionSettings {ArduinoIdeLocation = string.Empty};
                     using (var sw = new StreamWriter(settingsFile))
                     {
                         sw.Write(JsonConvert.SerializeObject(ExtensionSettings));
@@ -148,8 +140,17 @@ namespace SoftwareDebuggerExtension.ExtensionConfiguration
             catch (Exception ex)
             {
                 VSTraceListener.Instance.LogException("Error loading or creating extension settings", ex);
-                ExtensionSettings = new ExtensionSettings() {ArduinoIdeLocation = string.Empty};
+                ExtensionSettings = new ExtensionSettings {ArduinoIdeLocation = string.Empty};
             }
+        }
+
+        public class DebuggingCapsStrings
+        {
+            public const string RamWrite = "CAPS_RAM_WRITE";
+            public const string SaveContext = "CAPS_SAVE_CTX";
+            public const string EEPROMRead = "CAPS_EEPROM_READ";
+            public const string EEPROMWrite = "CAPS_EEPROM_WRITE";
+            public const string SingleStep = "CAPS_SINGLE_STEP";
         }
     }
 

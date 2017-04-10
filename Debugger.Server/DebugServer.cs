@@ -221,7 +221,8 @@ namespace Debugger.Server
                 DettectDebugRequest(data);
                 if (_state != DebuggerState.NotConnected)
                 {
-                    Trace.WriteLine($"Debugger Attached Version = {DebugVersion}, Signature = 0x{DeviceSignature:X8}, Caps = {Caps}");
+                    Trace.WriteLine(
+                        $"Debugger Attached Version = {DebugVersion}, Signature = 0x{DeviceSignature:X8}, Caps = {Caps}");
                     InDebug = true;
                     Task.Run(() => { DebuggerAttached?.Invoke(); });
                 }
