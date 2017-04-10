@@ -1,17 +1,15 @@
-﻿using Atmel.Studio.Services;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel;
 using System.Windows;
+using Atmel.Studio.Services;
 
 namespace SoftwareDebuggerExtension
 {
     /// <summary>
-    /// Interaction logic for Settings.xaml
+    ///     Interaction logic for Settings.xaml
     /// </summary>
     public partial class Settings : Window, INotifyPropertyChanged
     {
-        public event PropertyChangedEventHandler PropertyChanged;
-
         public static List<string> sAvailableOptions = new List<string>
         {
             "CAPS_RAM_WRITE",
@@ -21,10 +19,18 @@ namespace SoftwareDebuggerExtension
             "CAPS_SINGLE_STEP"
         };
 
-        private List<string> _projectDefines;
         private string _arduinoPath;
 
-        public string ArduinoPath {
+        private List<string> _projectDefines;
+
+        public Settings()
+        {
+            InitializeComponent();
+            DataContext = this;
+        }
+
+        public string ArduinoPath
+        {
             get { return _arduinoPath; }
             set
             {
@@ -35,19 +41,16 @@ namespace SoftwareDebuggerExtension
                 }
             }
         }
+
         public bool IsChecked_SingleStep
         {
             get { return _projectDefines.Contains("CAPS_SINGLE_STEP"); }
             set
             {
                 if (value == false)
-                {
                     _projectDefines.Remove("CAPS_SINGLE_STEP");
-                }
                 else
-                {
                     _projectDefines.Add("CAPS_SINGLE_STEP");
-                }
             }
         }
 
@@ -57,13 +60,9 @@ namespace SoftwareDebuggerExtension
             set
             {
                 if (value == false)
-                {
                     _projectDefines.Remove("CAPS_EEPROM_WRITE");
-                }
                 else
-                {
                     _projectDefines.Add("CAPS_EEPROM_WRITE");
-                }
             }
         }
 
@@ -73,25 +72,19 @@ namespace SoftwareDebuggerExtension
             set
             {
                 if (value == false)
-                {
                     _projectDefines.Remove("CAPS_EEPROM_READ");
-                }
                 else
-                {
                     _projectDefines.Add("CAPS_EEPROM_READ");
-                }
             }
         }
 
         public bool IsChecked_WriteRam
         {
             get { return _projectDefines.Contains("CAPS_RAM_WRITE"); }
-            set {
-                if (value == false){
-                    _projectDefines.Remove("CAPS_RAM_WRITE");
-                } else {
-                    _projectDefines.Add("CAPS_RAM_WRITE");
-                }
+            set
+            {
+                if (value == false) _projectDefines.Remove("CAPS_RAM_WRITE");
+                else _projectDefines.Add("CAPS_RAM_WRITE");
             }
         }
 
@@ -101,15 +94,13 @@ namespace SoftwareDebuggerExtension
             set
             {
                 if (value == false)
-                {
                     _projectDefines.Remove("CAPS_SAVE_CTX");
-                }
                 else
-                {
                     _projectDefines.Add("CAPS_SAVE_CTX");
-                }
             }
         }
+
+        public event PropertyChangedEventHandler PropertyChanged;
 
         public void SetArduinoPath(string arduinoIdePath)
         {
@@ -122,26 +113,22 @@ namespace SoftwareDebuggerExtension
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("*"));
         }
 
-        public Settings()
-        {
-            InitializeComponent();
-            DataContext = this;
-        }
-
         private void Save_Click(object sender, RoutedEventArgs e)
         {
-            this.DialogResult = true;
-            this.Close();
+            DialogResult = true;
+            Close();
         }
 
         private void Cancel_Click(object sender, RoutedEventArgs e)
         {
-            this.Close();
+            Close();
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            ArduinoPath = ATServiceProvider.DialogService.ShowEnhancedFolderBrowserDialog("Browse Arduino install location", ArduinoPath);
+            ArduinoPath =
+                ATServiceProvider.DialogService.ShowEnhancedFolderBrowserDialog("Browse Arduino install location",
+                    ArduinoPath);
         }
     }
 }

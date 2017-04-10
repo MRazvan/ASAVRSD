@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.VisualStudio.Shell.Interop;
 
 namespace SoftwareDebuggerExtension.SDebugger
@@ -15,9 +11,9 @@ namespace SoftwareDebuggerExtension.SDebugger
 
 
         private readonly IServiceProvider _serviceProvider;
+        private IVsOutputWindowPane _debugOutPane;
         private IVsOutputWindowPane _serialOutPane;
         private IVsOutputWindowPane _traceOutPane;
-        private IVsOutputWindowPane _debugOutPane;
 
         public Output(IServiceProvider serviceProvider)
         {
@@ -33,7 +29,7 @@ namespace SoftwareDebuggerExtension.SDebugger
 
         public void Activate(Guid id)
         {
-            var output = (IVsOutputWindow)_serviceProvider.GetService(typeof(SVsOutputWindow));
+            var output = (IVsOutputWindow) _serviceProvider.GetService(typeof(SVsOutputWindow));
             IVsOutputWindowPane pane;
             output.GetPane(ref id, out pane);
             pane?.Activate();
@@ -41,7 +37,7 @@ namespace SoftwareDebuggerExtension.SDebugger
 
         private IVsOutputWindowPane InitializePane(ref Guid id, string title, bool visible, bool clearWithSolution)
         {
-            var output = (IVsOutputWindow)_serviceProvider.GetService(typeof(SVsOutputWindow));
+            var output = (IVsOutputWindow) _serviceProvider.GetService(typeof(SVsOutputWindow));
             IVsOutputWindowPane pane;
             output.GetPane(ref id, out pane);
             if (pane == null)
@@ -80,7 +76,7 @@ namespace SoftwareDebuggerExtension.SDebugger
 
         public void Clear(Guid id)
         {
-            var output = (IVsOutputWindow)_serviceProvider.GetService(typeof(SVsOutputWindow));
+            var output = (IVsOutputWindow) _serviceProvider.GetService(typeof(SVsOutputWindow));
             IVsOutputWindowPane pane;
             output.GetPane(ref id, out pane);
             pane?.Clear();

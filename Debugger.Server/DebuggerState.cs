@@ -1,6 +1,6 @@
 ﻿namespace Debugger.Server
 {
-    enum DebuggerState
+    internal enum DebuggerState
     {
         NotConnected,
         WaitResponse,

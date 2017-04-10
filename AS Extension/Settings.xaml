@@ -24,20 +24,27 @@
                     <ControlTemplate TargetType="{x:Type CheckBox}">
                         <ControlTemplate.Resources>
                             <Storyboard x:Key="OnChecking">
-                                <DoubleAnimationUsingKeyFrames BeginTime="00:00:00" Storyboard.TargetName="slider" Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[3].(TranslateTransform.X)">
+                                <DoubleAnimationUsingKeyFrames BeginTime="00:00:00" Storyboard.TargetName="slider"
+                                                               Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[3].(TranslateTransform.X)">
                                     <SplineDoubleKeyFrame KeyTime="00:00:00.1000000" Value="30" />
                                 </DoubleAnimationUsingKeyFrames>
                             </Storyboard>
                             <Storyboard x:Key="OnUnchecking">
-                                <DoubleAnimationUsingKeyFrames BeginTime="00:00:00" Storyboard.TargetName="slider" Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[3].(TranslateTransform.X)">
+                                <DoubleAnimationUsingKeyFrames BeginTime="00:00:00" Storyboard.TargetName="slider"
+                                                               Storyboard.TargetProperty="(UIElement.RenderTransform).(TransformGroup.Children)[3].(TranslateTransform.X)">
                                     <SplineDoubleKeyFrame KeyTime="00:00:00.1000000" Value="0" />
                                 </DoubleAnimationUsingKeyFrames>
                             </Storyboard>
                         </ControlTemplate.Resources>
                         <DockPanel x:Name="dockPanel" Width="60">
-                            <ContentPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}" Content="{TemplateBinding Content}" ContentStringFormat="{TemplateBinding ContentStringFormat}" ContentTemplate="{TemplateBinding ContentTemplate}" RecognizesAccessKey="True" VerticalAlignment="Center" />
+                            <ContentPresenter SnapsToDevicePixels="{TemplateBinding SnapsToDevicePixels}"
+                                              Content="{TemplateBinding Content}"
+                                              ContentStringFormat="{TemplateBinding ContentStringFormat}"
+                                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                                              RecognizesAccessKey="True" VerticalAlignment="Center" />
                             <Grid>
-                                <Border x:Name="BackgroundBorder" BorderBrush="#FF939393" BorderThickness="1" CornerRadius="3" Height="20" Width="60">
+                                <Border x:Name="BackgroundBorder" BorderBrush="#FF939393" BorderThickness="1"
+                                        CornerRadius="3" Height="20" Width="60">
                                     <Border.Background>
                                         <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
                                             <GradientStop Color="#FFB5B5B5" Offset="0" />
@@ -52,11 +59,17 @@
                                             <ColumnDefinition />
                                             <ColumnDefinition />
                                         </Grid.ColumnDefinitions>
-                                        <Ellipse x:Name="Off" Width="8" Height="8" Stroke="#FF7A7A7A" StrokeThickness="2" Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                        <Line x:Name="On" X1="0" Y1="0" X2="0" Y2="8" Stroke="#FF7A7A7A" StrokeThickness="2" Grid.Column="0" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        <Ellipse x:Name="Off" Width="8" Height="8" Stroke="#FF7A7A7A"
+                                                 StrokeThickness="2" Grid.Column="1" HorizontalAlignment="Center"
+                                                 VerticalAlignment="Center" />
+                                        <Line x:Name="On" X1="0" Y1="0" X2="0" Y2="8" Stroke="#FF7A7A7A"
+                                              StrokeThickness="2" Grid.Column="0" HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" />
                                     </Grid>
                                 </Border>
-                                <Border BorderBrush="#FF939393" HorizontalAlignment="Left" x:Name="slider" Width="30" Height="20" BorderThickness="1" CornerRadius="3" RenderTransformOrigin="0.5,0.5" Margin="0">
+                                <Border BorderBrush="#FF939393" HorizontalAlignment="Left" x:Name="slider" Width="30"
+                                        Height="20" BorderThickness="1" CornerRadius="3"
+                                        RenderTransformOrigin="0.5,0.5" Margin="0">
                                     <Border.RenderTransform>
                                         <TransformGroup>
                                             <ScaleTransform ScaleX="1" ScaleY="1" />
@@ -78,16 +91,20 @@
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsChecked" Value="True">
                                 <Trigger.ExitActions>
-                                    <BeginStoryboard Storyboard="{StaticResource OnUnchecking}" x:Name="OnUnchecking_BeginStoryboard" />
+                                    <BeginStoryboard Storyboard="{StaticResource OnUnchecking}"
+                                                     x:Name="OnUnchecking_BeginStoryboard" />
                                 </Trigger.ExitActions>
                                 <Trigger.EnterActions>
-                                    <BeginStoryboard Storyboard="{StaticResource OnChecking}" x:Name="OnChecking_BeginStoryboard" />
+                                    <BeginStoryboard Storyboard="{StaticResource OnChecking}"
+                                                     x:Name="OnChecking_BeginStoryboard" />
                                 </Trigger.EnterActions>
                                 <Setter TargetName="On" Property="Stroke" Value="White" />
                                 <Setter TargetName="Off" Property="Stroke" Value="White" />
                                 <!-- Change Orange or Blue color here -->
-                                <Setter TargetName="BackgroundBorder" Property="Background" Value="{StaticResource CheckedOrange}" />
-                                <Setter TargetName="BackgroundBorder" Property="BorderBrush" Value="{StaticResource CheckedOrangeBorder}" />
+                                <Setter TargetName="BackgroundBorder" Property="Background"
+                                        Value="{StaticResource CheckedOrange}" />
+                                <Setter TargetName="BackgroundBorder" Property="BorderBrush"
+                                        Value="{StaticResource CheckedOrangeBorder}" />
                             </Trigger>
                             <Trigger Property="IsEnabled" Value="False">
                                 <Setter Property="Opacity" Value="0.4" />
@@ -96,87 +113,94 @@
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
-            <Setter Property="Margin" Value="4,4,4,4"></Setter>
+            <Setter Property="Margin" Value="4,4,4,4" />
         </Style>
         <Style x:Key="Header" TargetType="{x:Type Label}">
-            <Setter Property="FontWeight" Value="ExtraBold"></Setter>
-            <Setter Property="Margin" Value="0,4,4,0"></Setter>
-            <Setter Property="Padding" Value="0, 0, 0, 0"></Setter>
+            <Setter Property="FontWeight" Value="ExtraBold" />
+            <Setter Property="Margin" Value="0,4,4,0" />
+            <Setter Property="Padding" Value="0, 0, 0, 0" />
         </Style>
         <Style x:Key="Info" TargetType="{x:Type TextBlock}">
-            <Setter Property="Margin" Value="0,0,4,4"></Setter>
-            <Setter Property="Padding" Value="0, 0, 0, 0"></Setter>
-            <Setter Property="FontWeight" Value="Normal"></Setter>
-            <Setter Property="FontStyle" Value="Italic"></Setter>
-            <Setter Property="Foreground" Value="Gray"></Setter>
-            <Setter Property="TextWrapping" Value="Wrap"></Setter>
+            <Setter Property="Margin" Value="0,0,4,4" />
+            <Setter Property="Padding" Value="0, 0, 0, 0" />
+            <Setter Property="FontWeight" Value="Normal" />
+            <Setter Property="FontStyle" Value="Italic" />
+            <Setter Property="Foreground" Value="Gray" />
+            <Setter Property="TextWrapping" Value="Wrap" />
         </Style>
     </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition/>
-            <RowDefinition Height="auto"/>
+            <RowDefinition />
+            <RowDefinition Height="auto" />
         </Grid.RowDefinitions>
         <Grid Grid.Row="0">
             <Grid>
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="auto"/>
-                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="auto" />
+                    <ColumnDefinition Width="*" />
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="auto"/>
-                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="auto" />
+                    <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
                 <Label Grid.Row="0" Grid.Column="0" Margin="5">Arduino IDE Location :</Label>
-                <TextBox x:Name="ideLocation" Grid.Row="0" Grid.Column="1" Margin="5, 10, 5, 20" Text="{Binding Path=ArduinoPath}"></TextBox>
-                <GroupBox Grid.Row="1" Grid.ColumnSpan="2" Header="Projects Debugging options" FontWeight="Bold" Padding="5" Margin="5">
+                <TextBox x:Name="ideLocation" Grid.Row="0" Grid.Column="1" Margin="5, 10, 5, 20"
+                         Text="{Binding Path=ArduinoPath}" />
+                <GroupBox Grid.Row="1" Grid.ColumnSpan="2" Header="Projects Debugging options" FontWeight="Bold"
+                          Padding="5" Margin="5">
                     <ScrollViewer>
                         <Grid Grid.IsSharedSizeScope="True">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="auto"/>
-                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="auto" />
+                                <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
                             <Grid.RowDefinitions>
-                                <RowDefinition Height="auto" SharedSizeGroup="checkboxRow"/>
-                                <RowDefinition Height="auto" SharedSizeGroup="checkboxRow"/>
-                                <RowDefinition Height="auto" SharedSizeGroup="checkboxRow"/>
-                                <RowDefinition Height="auto" SharedSizeGroup="checkboxRow"/>
-                                <RowDefinition Height="auto" SharedSizeGroup="checkboxRow"/>
+                                <RowDefinition Height="auto" SharedSizeGroup="checkboxRow" />
+                                <RowDefinition Height="auto" SharedSizeGroup="checkboxRow" />
+                                <RowDefinition Height="auto" SharedSizeGroup="checkboxRow" />
+                                <RowDefinition Height="auto" SharedSizeGroup="checkboxRow" />
+                                <RowDefinition Height="auto" SharedSizeGroup="checkboxRow" />
                             </Grid.RowDefinitions>
-                            <StackPanel Grid.Row="0" Grid.Column="0" >
-                                <CheckBox Style="{DynamicResource SwitchStyle}" x:Name="writeRam" IsChecked="{Binding IsChecked_WriteRam}"></CheckBox>
+                            <StackPanel Grid.Row="0" Grid.Column="0">
+                                <CheckBox Style="{DynamicResource SwitchStyle}" x:Name="writeRam"
+                                          IsChecked="{Binding IsChecked_WriteRam}" />
                             </StackPanel>
                             <StackPanel Grid.Row="0" Grid.Column="1">
                                 <Label Style="{DynamicResource Header}">Write RAM Support</Label>
                                 <TextBlock Style="{DynamicResource Info}">Enables the writing of ram when the program is in a breakpoint, meaning changing variables, changing IO registers and ram data</TextBlock>
                             </StackPanel>
 
-                            <StackPanel Grid.Row="1" Grid.Column="0" >
-                                <CheckBox Style="{DynamicResource SwitchStyle}" x:Name="saveContext" IsChecked="{Binding IsChecked_SaveContext}"></CheckBox>
+                            <StackPanel Grid.Row="1" Grid.Column="0">
+                                <CheckBox Style="{DynamicResource SwitchStyle}" x:Name="saveContext"
+                                          IsChecked="{Binding IsChecked_SaveContext}" />
                             </StackPanel>
                             <StackPanel Grid.Row="1" Grid.Column="1">
                                 <Label Style="{DynamicResource Header}">Save Context</Label>
                                 <TextBlock Style="{DynamicResource Info}">Enables reading of the real values for the registers before the breakpoint is hit. (R0, R1, R2, R3 ... PC, SREG, Stack)</TextBlock>
                             </StackPanel>
 
-                            <StackPanel Grid.Row="2" Grid.Column="0" >
-                                <CheckBox Style="{DynamicResource SwitchStyle}" x:Name="singleStep" IsChecked="{Binding IsChecked_SingleStep}"></CheckBox>
+                            <StackPanel Grid.Row="2" Grid.Column="0">
+                                <CheckBox Style="{DynamicResource SwitchStyle}" x:Name="singleStep"
+                                          IsChecked="{Binding IsChecked_SingleStep}" />
                             </StackPanel>
                             <StackPanel Grid.Row="2" Grid.Column="1">
                                 <Label Style="{DynamicResource Header}">Single Step</Label>
                                 <TextBlock Style="{DynamicResource Info}">Enable single stepping through code (One instruction at a time)</TextBlock>
                             </StackPanel>
 
-                            <StackPanel Grid.Row="3" Grid.Column="0" >
-                                <CheckBox Style="{DynamicResource SwitchStyle}" x:Name="eepromRead" IsChecked="{Binding IsChecked_EEPROM_Read}"></CheckBox>
+                            <StackPanel Grid.Row="3" Grid.Column="0">
+                                <CheckBox Style="{DynamicResource SwitchStyle}" x:Name="eepromRead"
+                                          IsChecked="{Binding IsChecked_EEPROM_Read}" />
                             </StackPanel>
                             <StackPanel Grid.Row="3" Grid.Column="1">
                                 <Label Style="{DynamicResource Header}">EEPROM Read</Label>
                                 <TextBlock Style="{DynamicResource Info}">Enable reading the EEPROM values in cases where the MCU has eeprom</TextBlock>
                             </StackPanel>
 
-                            <StackPanel Grid.Row="4" Grid.Column="0" >
-                                <CheckBox Style="{DynamicResource SwitchStyle}" x:Name="eepromWrite" IsChecked="{Binding IsChecked_EEPROM_Write}"></CheckBox>
+                            <StackPanel Grid.Row="4" Grid.Column="0">
+                                <CheckBox Style="{DynamicResource SwitchStyle}" x:Name="eepromWrite"
+                                          IsChecked="{Binding IsChecked_EEPROM_Write}" />
                             </StackPanel>
                             <StackPanel Grid.Row="4" Grid.Column="1">
                                 <Label Style="{DynamicResource Header}">EEPROM Write</Label>

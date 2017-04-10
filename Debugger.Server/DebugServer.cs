@@ -6,54 +6,49 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Debugger.Server.Commands;
+using Debugger.Server.Transports;
 
 namespace Debugger.Server
 {
     public delegate void DebuggerAttachedDelegate();
+
     public delegate void DebuggerDetachedDelegate();
+
     public delegate void DebuggerDisconnectedDelegate();
+
     public delegate void UnknowDataDelegate(byte data);
 
     public class DebugServer : IDebugServer
     {
-        private readonly BackgroundWorker _receiverWorker;
+        private readonly ConcurrentQueue<DebugCommandWrapper> _commands = new ConcurrentQueue<DebugCommandWrapper>();
         private readonly BackgroundWorker _commandsWorker;
-        private ITransport _transport;
-        private DebuggerState _state;
 
         private readonly byte[] _debugPreambleBuffer = new byte[12];
-        private int _debugPreambleIdx;
-        private readonly List<DebugPreamble> _debugPreambleData = new List<DebugPreamble> {
-            new DebugPreamble { Value = 0x21, Action = DebugDetectAction.Compare },
-            new DebugPreamble { Value = 0xFE, Action = DebugDetectAction.Compare },
-            new DebugPreamble { Value = 0xA9, Action = DebugDetectAction.Compare },
-            new DebugPreamble { Value = 0x15, Action = DebugDetectAction.Compare },
-            new DebugPreamble { Value = 0x84, Action = DebugDetectAction.Compare },
-            new DebugPreamble { Value = 0x00, Action = DebugDetectAction.Skip },
-            new DebugPreamble { Value = 0x00, Action = DebugDetectAction.Skip },
-            new DebugPreamble { Value = 0x00, Action = DebugDetectAction.Skip },
-            new DebugPreamble { Value = 0x00, Action = DebugDetectAction.Skip },
-            new DebugPreamble { Value = 0x00, Action = DebugDetectAction.Skip },
-            new DebugPreamble { Value = 0x00, Action = DebugDetectAction.Skip },
-            new DebugPreamble { Value = 0xFF, Action = DebugDetectAction.Compare }
+
+        private readonly List<DebugPreamble> _debugPreambleData = new List<DebugPreamble>
+        {
+            new DebugPreamble {Value = 0x21, Action = DebugDetectAction.Compare},
+            new DebugPreamble {Value = 0xFE, Action = DebugDetectAction.Compare},
+            new DebugPreamble {Value = 0xA9, Action = DebugDetectAction.Compare},
+            new DebugPreamble {Value = 0x15, Action = DebugDetectAction.Compare},
+            new DebugPreamble {Value = 0x84, Action = DebugDetectAction.Compare},
+            new DebugPreamble {Value = 0x00, Action = DebugDetectAction.Skip},
+            new DebugPreamble {Value = 0x00, Action = DebugDetectAction.Skip},
+            new DebugPreamble {Value = 0x00, Action = DebugDetectAction.Skip},
+            new DebugPreamble {Value = 0x00, Action = DebugDetectAction.Skip},
+            new DebugPreamble {Value = 0x00, Action = DebugDetectAction.Skip},
+            new DebugPreamble {Value = 0x00, Action = DebugDetectAction.Skip},
+            new DebugPreamble {Value = 0xFF, Action = DebugDetectAction.Compare}
         };
 
-        public bool InDebug { get; set; }
-        public DebuggerCapabilities Caps { get; set; }
-        public byte DebugVersion    { get; set; }
-        public uint DeviceSignature { get; set; }
-
-        public event DebuggerDisconnectedDelegate DebuggerDisconnected;
-        public event DebuggerAttachedDelegate DebuggerAttached;
-        public event DebuggerDetachedDelegate DebuggerDetached;
-        public event UnknowDataDelegate UnknownData;
-
-
-        private readonly ConcurrentQueue<DebugCommandWrapper> _commands = new ConcurrentQueue<DebugCommandWrapper>();
+        private readonly byte[] _emptyCommandResponse = new byte[0];
+        private readonly BackgroundWorker _receiverWorker;
         private DebugCommandWrapper _currentCommand;
         private byte[] _currentCommandBuffer;
         private int _currentCommandReceiveIdx;
-        private readonly byte[] _emptyCommandResponse = new byte[0];
+        private int _debugPreambleIdx;
+        private DebuggerState _state;
+        private ITransport _transport;
 
         public DebugServer()
         {
@@ -74,6 +69,48 @@ namespace Debugger.Server
             _commandsWorker.DoWork += _commandsWorker_DoWork;
         }
 
+        public bool InDebug { get; set; }
+        public DebuggerCapabilities Caps { get; set; }
+        public byte DebugVersion { get; set; }
+        public uint DeviceSignature { get; set; }
+
+        public event DebuggerDisconnectedDelegate DebuggerDisconnected;
+        public event DebuggerAttachedDelegate DebuggerAttached;
+        public event DebuggerDetachedDelegate DebuggerDetached;
+        public event UnknowDataDelegate UnknownData;
+
+        public void Continue()
+        {
+            ExecuteCommandWithClearState(new DebugCommand_Continue());
+        }
+
+        public void Start()
+        {
+            _transport.Connect();
+            _receiverWorker.RunWorkerAsync();
+            _commandsWorker.RunWorkerAsync();
+        }
+
+        public Task<byte[]> AddCommand(IDebugCommand cmd)
+        {
+            if (_state == DebuggerState.NotConnected || _state == DebuggerState.Stopping)
+                return Task.FromResult<byte[]>(null);
+
+            var wrapper = new DebugCommandWrapper(cmd);
+            _commands.Enqueue(wrapper);
+            return wrapper.TCS.Task;
+        }
+
+        public void Stop()
+        {
+            InDebug = false;
+            _state = DebuggerState.Stopping;
+            _commandsWorker.CancelAsync();
+            _receiverWorker.CancelAsync();
+            _transport.Disconnect();
+            _state = DebuggerState.NotConnected;
+        }
+
         public void SetTransport(ITransport transport)
         {
             _transport = transport;
@@ -84,11 +121,6 @@ namespace Debugger.Server
             ExecuteCommandWithClearState(new DebugCommand_Step());
         }
 
-        public void Continue()
-        {
-            ExecuteCommandWithClearState(new DebugCommand_Continue());
-        }
-
         private void ExecuteCommandWithClearState(IDebugCommand command)
         {
             InDebug = false;
@@ -96,9 +128,7 @@ namespace Debugger.Server
             // Clear the commands buffer
             DebugCommandWrapper cmd;
             while (_commands.TryDequeue(out cmd))
-            {
                 cmd.TCS.SetResult(_emptyCommandResponse);
-            }
             // Clear the current command
             _currentCommand = null;
             _currentCommandBuffer = null;
@@ -137,45 +167,17 @@ namespace Debugger.Server
                     _currentCommand = tempCommand;
                     _transport.Write(_currentCommand.Command.CommandBuffer);
                 }
-                
+
                 // Delay a bit so we don't block the CPU
                 Thread.Sleep(10);
             }
-        }
-
-        public void Start()
-        {
-            _transport.Connect();
-            _receiverWorker.RunWorkerAsync();
-            _commandsWorker.RunWorkerAsync();
-        }
-
-        public Task<byte[]> AddCommand(IDebugCommand cmd)
-        {
-            if (_state == DebuggerState.NotConnected || _state == DebuggerState.Stopping)
-                return Task.FromResult<byte[]>(null);
-
-            var wrapper = new DebugCommandWrapper(cmd);
-            _commands.Enqueue(wrapper);
-            return wrapper.TCS.Task;
-            
-        }
-
-        public void Stop()
-        {
-            InDebug = false;
-            _state = DebuggerState.Stopping;
-            _commandsWorker.CancelAsync();
-            _receiverWorker.CancelAsync();
-            _transport.Disconnect();
-            _state = DebuggerState.NotConnected;
         }
 
         private void DettectDebugRequest(byte data)
         {
             if (_state != DebuggerState.NotConnected) return;
 
-            _debugPreambleBuffer[_debugPreambleIdx]=data;
+            _debugPreambleBuffer[_debugPreambleIdx] = data;
 
             if (_debugPreambleData[_debugPreambleIdx].Action == DebugDetectAction.Skip)
             {
@@ -187,9 +189,7 @@ namespace Debugger.Server
                 // If we have data and we could not match the preamble
                 //  Dump the data (basically notify anyone else interested in the data)
                 for (var i = 0; i <= _debugPreambleIdx; ++i)
-                {
                     UnknownData?.Invoke(_debugPreambleBuffer[i]);
-                }
                 _debugPreambleIdx = 0;
                 return;
             }
@@ -200,14 +200,14 @@ namespace Debugger.Server
 
             _state = DebuggerState.Connected;
             DebugVersion = _debugPreambleBuffer[5];
-            DeviceSignature = (uint)(
-                (_debugPreambleBuffer[6] << 16) + 
-                (_debugPreambleBuffer[7] << 8) + 
+            DeviceSignature = (uint) (
+                (_debugPreambleBuffer[6] << 16) +
+                (_debugPreambleBuffer[7] << 8) +
                 _debugPreambleBuffer[8]
             );
-            Caps = (DebuggerCapabilities)(
+            Caps = (DebuggerCapabilities) (
                 (_debugPreambleBuffer[10] << 8) +
-                (_debugPreambleBuffer[9])    
+                _debugPreambleBuffer[9]
             );
             _debugPreambleIdx = 0;
         }
@@ -220,10 +220,7 @@ namespace Debugger.Server
                 if (_state != DebuggerState.NotConnected)
                 {
                     InDebug = true;
-                    Task.Run(() =>
-                    {
-                        DebuggerAttached?.Invoke();
-                    });
+                    Task.Run(() => { DebuggerAttached?.Invoke(); });
                 }
             }
             else
@@ -232,9 +229,7 @@ namespace Debugger.Server
                 {
                     _currentCommandBuffer[_currentCommandReceiveIdx++] = data;
                     if (_currentCommandReceiveIdx != _currentCommand.Command.ResponseSize)
-                    {
                         return;
-                    }
                     _currentCommand.TCS.SetResult(_currentCommandBuffer);
                     _currentCommand = null;
                 }
@@ -275,10 +270,7 @@ namespace Debugger.Server
                 //  this happens when the port becommes unavailable
                 //  usually when the cable was disconnected
                 // Should we notifiy someone?
-                Task.Run(() =>
-                {
-                    DebuggerDisconnected?.Invoke();
-                });
+                Task.Run(() => { DebuggerDisconnected?.Invoke(); });
             }
         }
     }

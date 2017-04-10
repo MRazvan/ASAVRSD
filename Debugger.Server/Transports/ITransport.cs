@@ -1,4 +1,4 @@
-﻿namespace Debugger.Server
+﻿namespace Debugger.Server.Transports
 {
     public interface ITransport
     {

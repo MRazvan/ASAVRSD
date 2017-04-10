@@ -1,12 +1,11 @@
-﻿using System;
-
-namespace Debugger.Server.Commands
+﻿namespace Debugger.Server.Commands
 {
     public class DebugCommand_Step : IDebugCommand
     {
-        public byte[] CommandBuffer { get; private set; }
-            = new byte[1] { DebuggerCommandCodes.DEBUG_REQ_SINGLE_STEP };
-        public uint ResponseSize { get; private set; }
+        public byte[] CommandBuffer { get; }
+            = new byte[1] {DebuggerCommandCodes.DEBUG_REQ_SINGLE_STEP};
+
+        public uint ResponseSize { get; }
             = 0;
     }
 }

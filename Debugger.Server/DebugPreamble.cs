@@ -1,6 +1,6 @@
 ﻿namespace Debugger.Server
 {
-    class DebugPreamble
+    internal class DebugPreamble
     {
         public byte Value { get; set; }
         public DebugDetectAction Action { get; set; }

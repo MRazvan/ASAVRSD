@@ -1,46 +1,35 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
+using System.Windows.Threading;
 using Atmel.Studio.Services;
 using Atmel.Studio.Services.Device;
 using Atmel.VsIde.AvrStudio.Services.TargetService;
+using Atmel.VsIde.AvrStudio.Services.TargetService.TCF.Services;
 using Debugger.Server;
 using Debugger.Server.Commands;
-using Microsoft.VisualStudio.Shell.Interop;
-using IServiceProvider = System.IServiceProvider;
-using Atmel.VsIde.AvrStudio.Services.TargetService.TCF.Services;
+using Debugger.Server.Transports;
 using EnvDTE;
-using System.Reflection;
-using System.Windows.Threading;
+using Microsoft.VisualStudio.Shell.Interop;
 
 namespace SoftwareDebuggerExtension.SDebugger
 {
     public class SimulatorDebugger
     {
-        enum State
-        {
-            None,
-            Continue,
-            Step,
-            InDebug
-        }
+        public delegate void DebugStateChangedDelegate();
 
-        private static Dictionary<string, object> sEmptyContextData = new Dictionary<string, object>();
+        private static readonly Dictionary<string, object> sEmptyContextData = new Dictionary<string, object>();
 
         private DebugTarget _debugTarget;
+        private readonly DTE _dte;
+        private readonly DebuggerEventsProxy _events;
+        private readonly Output _output;
         private uint _pc;
         private IAddressSpace _ramSpace;
         private bool _running;
-        private DebugServer _server;
-        private ITargetService _target;
-        private DebuggerEventsProxy _events;
-        private Output _output;
-        private DTE _dte;
+        private readonly DebugServer _server;
         private State _state;
-
-        public delegate void DebugStateChangedDelegate();
-        public event DebugStateChangedDelegate DebugStateChanged;
-
-        public bool CanRun =>  _events.InDebug && _server.InDebug && _state == State.InDebug;
+        private ITargetService _target;
 
         public SimulatorDebugger(IServiceProvider serviceProvider, Output output)
         {
@@ -50,6 +39,9 @@ namespace SoftwareDebuggerExtension.SDebugger
             _server = new DebugServer();
             _events = new DebuggerEventsProxy(_server, _output);
         }
+
+        public bool CanRun => _events.InDebug && _server.InDebug && _state == State.InDebug;
+        public event DebugStateChangedDelegate DebugStateChanged;
 
 
         public void Start(ITransport transport)
@@ -104,20 +96,17 @@ namespace SoftwareDebuggerExtension.SDebugger
         }
 
         private void EventsOnDebugLeave()
-        { 
+        {
             if (_state == State.Continue)
-            {
                 _server.Continue();
-            }
             else if (_state == State.Step)
-            {
                 _server.Step();
-            }
         }
 
         private void ServerDebuggerAttached()
         {
-            DebugWrite(MethodBase.GetCurrentMethod().Name + " " + _dte.Debugger.CurrentMode + $" {_debugTarget.TargetState}");
+            DebugWrite(MethodBase.GetCurrentMethod().Name + " " + _dte.Debugger.CurrentMode +
+                       $" {_debugTarget.TargetState}");
             if (_state != State.Step)
             {
                 IStatus status;
@@ -129,7 +118,8 @@ namespace SoftwareDebuggerExtension.SDebugger
         {
             if (!CanRun)
                 return;
-            DebugWrite(MethodBase.GetCurrentMethod().Name + " " + _dte.Debugger.CurrentMode + $" {_debugTarget.TargetState}");
+            DebugWrite(MethodBase.GetCurrentMethod().Name + " " + _dte.Debugger.CurrentMode +
+                       $" {_debugTarget.TargetState}");
             _state = State.Step;
             IStatus status;
             _debugTarget.SDM_Step(1, out status);
@@ -140,7 +130,8 @@ namespace SoftwareDebuggerExtension.SDebugger
         {
             if (!CanRun)
                 return;
-            DebugWrite(MethodBase.GetCurrentMethod().Name + " " + _dte.Debugger.CurrentMode + $" {_debugTarget.TargetState}");
+            DebugWrite(MethodBase.GetCurrentMethod().Name + " " + _dte.Debugger.CurrentMode +
+                       $" {_debugTarget.TargetState}");
             _state = State.Continue;
             IStatus status;
             _debugTarget.Resume(0x0, 0x0, out status);
@@ -159,7 +150,8 @@ namespace SoftwareDebuggerExtension.SDebugger
 
         private void EventsOnMemoryChanged(string memId, long addr, long size)
         {
-            DebugWrite(MethodBase.GetCurrentMethod().Name + " " + _dte.Debugger.CurrentMode + $" {_debugTarget.TargetState}");
+            DebugWrite(MethodBase.GetCurrentMethod().Name + " " + _dte.Debugger.CurrentMode +
+                       $" {_debugTarget.TargetState}");
 
             if (!_server.Caps.HasFlag(DebuggerCapabilities.CAPS_RAM_R_BIT))
                 return;
@@ -173,10 +165,11 @@ namespace SoftwareDebuggerExtension.SDebugger
 
         private void EventsOnDebugEnter()
         {
-            DebugWrite(MethodBase.GetCurrentMethod().Name + " " + _dte.Debugger.CurrentMode + $" {_debugTarget.targetIsStopped}");
+            DebugWrite(MethodBase.GetCurrentMethod().Name + " " + _dte.Debugger.CurrentMode +
+                       $" {_debugTarget.targetIsStopped}");
 
             IStatus status;
-            var ramData = WaitForCommand(new DebugCommand_Ram_Read((uint)_ramSpace.Start, (uint)_ramSpace.Size));
+            var ramData = WaitForCommand(new DebugCommand_Ram_Read((uint) _ramSpace.Start, (uint) _ramSpace.Size));
             if (_server.Caps.HasFlag(DebuggerCapabilities.CAPS_DBG_CTX_ADDR_BIT) &
                 _server.Caps.HasFlag(DebuggerCapabilities.CAPS_SAVE_CONTEXT_BIT))
             {
@@ -186,17 +179,20 @@ namespace SoftwareDebuggerExtension.SDebugger
                 for (var i = 0; i < 32; ++i)
                     ramData[i] = ramData[dbCtxAddr + i];
                 // Save the PC address
-                _pc = (uint)(ramData[dbCtxAddr + 35] << 8) + ramData[dbCtxAddr + 34];
+                _pc = (uint) (ramData[dbCtxAddr + 35] << 8) + ramData[dbCtxAddr + 34];
                 _debugTarget.ScriptInterface.CalcValue($"$pc=0x{_pc * 2:X}");
             }
             else
             {
-                _pc = (uint)_debugTarget.ScriptInterface.CalcNumericValue("$pc", 0) / 2;
+                _pc = (uint) _debugTarget.ScriptInterface.CalcNumericValue("$pc", 0) / 2;
             }
-            _debugTarget.Memory.SetMemory(_debugTarget.GetMemType("data"), _ramSpace.Start, 1, ramData.Length, 0, ramData, out status);
-            TargetService.MainThreadDispatcher.BeginInvoke(new Action(() => {
+            _debugTarget.Memory.SetMemory(_debugTarget.GetMemType("data"), _ramSpace.Start, 1, ramData.Length, 0,
+                ramData, out status);
+            TargetService.MainThreadDispatcher.BeginInvoke(new Action(() =>
+            {
                 _debugTarget.NotifyTargetBreaked(
-                    new DebugTarget.TargetHaltedEventArgs(_pc * 2, "Extern Break", _debugTarget.ProcessesContextid, sEmptyContextData)
+                    new DebugTarget.TargetHaltedEventArgs(_pc * 2, "Extern Break", _debugTarget.ProcessesContextid,
+                        sEmptyContextData)
                 );
                 _state = State.InDebug;
                 DebugStateChanged?.Invoke();
@@ -214,6 +210,14 @@ namespace SoftwareDebuggerExtension.SDebugger
         private void DebugWrite(string message)
         {
             _output.DebugOutLine(message);
+        }
+
+        private enum State
+        {
+            None,
+            Continue,
+            Step,
+            InDebug
         }
     }
 }

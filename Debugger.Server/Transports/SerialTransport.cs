@@ -5,10 +5,10 @@ namespace Debugger.Server.Transports
 {
     public class SerialTransport : ITransport
     {
+        private readonly byte[] _byteBuffer = new byte[1];
         private string _port;
-        private int _speed;
         private SerialPort _serial;
-        private byte[] _byteBuffer = new byte[1];
+        private int _speed;
 
         public void Connect()
         {
@@ -27,7 +27,7 @@ namespace Debugger.Server.Transports
 
         public byte ReadByte()
         {
-            return (byte)(_serial.ReadByte() & 0xFF);
+            return (byte) (_serial.ReadByte() & 0xFF);
         }
 
         public void SetPort(string port)

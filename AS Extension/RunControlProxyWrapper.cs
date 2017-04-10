@@ -1,14 +1,14 @@
-﻿using Atmel.VsIde.AvrStudio.Services.TargetService.TCF.Services.RunControl;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Atmel.Studio.Services;
+using Atmel.VsIde.AvrStudio.Services.TargetService.TCF.Services.RunControl;
 using Microsoft.VisualStudio.Shell.Interop;
 
 namespace SoftwareDebuggerExtension
 {
-    class RunControlProxyWrapper : IRunControlContext
+    internal class RunControlProxyWrapper : IRunControlContext
     {
-        private IRunControlContext _context;
-        private IVsOutputWindowPane _traceOutPane;
+        private readonly IRunControlContext _context;
+        private readonly IVsOutputWindowPane _traceOutPane;
 
         public RunControlProxyWrapper(IRunControlContext context)
         {

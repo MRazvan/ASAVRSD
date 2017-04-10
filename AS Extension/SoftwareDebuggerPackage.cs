@@ -1,14 +1,16 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.InteropServices;
-using Debugger.Server.Transports;
-using Microsoft.VisualStudio.Shell;
-using SoftwareDebuggerExtension.SDebugger;
-using Microsoft.VisualStudio;
-using EnvDTE;
-using Microsoft.VisualStudio.Shell.Interop;
+using System.Windows;
 using Atmel.Studio.Services;
+using Debugger.Server.Transports;
+using EnvDTE;
+using Microsoft.VisualStudio;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
+using SoftwareDebuggerExtension.SDebugger;
+using Process = System.Diagnostics.Process;
 
 namespace SoftwareDebuggerExtension
 {
@@ -33,10 +35,11 @@ namespace SoftwareDebuggerExtension
     [Guid(GuidList.guidSoftwareDebuggerPkgString)]
     public sealed class SoftwareDebuggerPackage : Package
     {
-        private SimulatorDebugger _debugger;
         private Commands _commands;
+        private SimulatorDebugger _debugger;
         private DTE _dte;
         private Output _output;
+
         /// <summary>
         ///     Default constructor of the package.
         ///     Inside this method you can place any initialization code that does not require
@@ -53,6 +56,7 @@ namespace SoftwareDebuggerExtension
         // Overriden Package Implementation
 
         #region Package Members
+
         /// <summary>
         ///     Initialization of the package; this method is called right after the package is sited, so this is the place
         ///     where you can put all the initilaization code that rely on services provided by VisualStudio.
@@ -80,8 +84,8 @@ namespace SoftwareDebuggerExtension
         {
             var settings = new Settings();
             settings.SetArduinoPath(string.Empty);
-            settings.SetProjectDefines(new System.Collections.Generic.List<string> { "CAPS_SAVE_CTX" });
-            settings.Owner = System.Windows.Application.Current.MainWindow;
+            settings.SetProjectDefines(new List<string> {"CAPS_SAVE_CTX"});
+            settings.Owner = Application.Current.MainWindow;
             settings.ShowDialog();
         }
 
@@ -143,7 +147,7 @@ namespace SoftwareDebuggerExtension
 
             _output.Activate(Output.SDDebugOutputPane);
             // Upload the program
-            var prog = new System.Diagnostics.Process();
+            var prog = new Process();
             prog.StartInfo = new ProcessStartInfo
             {
                 FileName = $"{GetArduinoIDE()}hardware\\tools\\avr\\bin\\avrdude.exe",
@@ -151,7 +155,8 @@ namespace SoftwareDebuggerExtension
                 UseShellExecute = false,
                 RedirectStandardError = true,
                 RedirectStandardOutput = true,
-                Arguments = $"\"-C{GetArduinoIDE()}hardware\\tools\\avr\\etc\\avrdude.conf\" -v -p{pi.Device?.Name.ToLower()} -carduino -P{_commands.Port} -b57600 -D -Uflash:w:\"{pi.OutputPath}\":i"
+                Arguments =
+                    $"\"-C{GetArduinoIDE()}hardware\\tools\\avr\\etc\\avrdude.conf\" -v -p{pi.Device?.Name.ToLower()} -carduino -P{_commands.Port} -b57600 -D -Uflash:w:\"{pi.OutputPath}\":i"
             };
             prog.EnableRaisingEvents = true;
             prog.OutputDataReceived += (sender, e) => _output.DebugOutLine(e.Data);

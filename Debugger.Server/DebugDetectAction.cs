@@ -1,6 +1,6 @@
 ﻿namespace Debugger.Server
 {
-    enum DebugDetectAction
+    internal enum DebugDetectAction
     {
         Compare,
         Skip

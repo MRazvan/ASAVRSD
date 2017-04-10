@@ -1,47 +1,45 @@
-﻿using Microsoft.VisualStudio.Shell;
-using System;
+﻿using System;
 using System.ComponentModel.Design;
 using System.IO.Ports;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Microsoft.VisualStudio.Shell;
 
 namespace SoftwareDebuggerExtension
 {
     public class Commands
     {
-        public delegate void RunAndAttachDelegate();
-        public delegate void StepDelegate();
         public delegate void ContinueDelegate();
+
+        public delegate void RunAndAttachDelegate();
+
         public delegate void ShowOptionsDelegate();
 
+        public delegate void StepDelegate();
+
         private readonly IServiceProvider _serviceProvider;
-        private string[] _ports;
-        private string _selectedPort;
 
-        private string[] _bauds = { "9600", "14400", "19200", "28800", "38400", "57600", "115200", "500000" };
-        private string _selectedBaudString;
-        private int _selectedBaud;
-        private OleMenuCommand _stepCommand;
+        private readonly string[] _bauds = {"9600", "14400", "19200", "28800", "38400", "57600", "115200", "500000"};
         private OleMenuCommand _continueCommand;
-        
-        public event RunAndAttachDelegate RunAndAttach;
-        public event StepDelegate Step;
-        public event ContinueDelegate Continue;
-        public event ShowOptionsDelegate ShowOptions;
-
-        public int BaudRate => _selectedBaud;
-        public string Port => _selectedPort;
-
-        #region CommandIds
-
-        #endregion
+        private string[] _ports;
+        private int _selectedBaud;
+        private string _selectedBaudString;
+        private OleMenuCommand _stepCommand;
 
         public Commands(IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
             _selectedBaud = 500000;
-            _selectedPort = SerialPort.GetPortNames().FirstOrDefault();
+            Port = SerialPort.GetPortNames().FirstOrDefault();
         }
+
+        public int BaudRate => _selectedBaud;
+        public string Port { get; private set; }
+
+        public event RunAndAttachDelegate RunAndAttach;
+        public event StepDelegate Step;
+        public event ContinueDelegate Continue;
+        public event ShowOptionsDelegate ShowOptions;
 
         public void Initialize()
         {
@@ -49,20 +47,28 @@ namespace SoftwareDebuggerExtension
             if (null != mcs)
             {
                 // Create the command for the menu item.
-                mcs.AddCommand(new OleMenuCommand(AttachCallback, new CommandID(GuidList.guidSoftwareDebuggerCmdSet, (int)PkgCmdIDList.cmdAttach)));
-                _stepCommand = new OleMenuCommand(StepCallback, new CommandID(GuidList.guidSoftwareDebuggerCmdSet, (int)PkgCmdIDList.cmdStep));
+                mcs.AddCommand(new OleMenuCommand(AttachCallback,
+                    new CommandID(GuidList.guidSoftwareDebuggerCmdSet, (int) PkgCmdIDList.cmdAttach)));
+                _stepCommand = new OleMenuCommand(StepCallback,
+                    new CommandID(GuidList.guidSoftwareDebuggerCmdSet, (int) PkgCmdIDList.cmdStep));
                 mcs.AddCommand(_stepCommand);
 
-                _continueCommand = new OleMenuCommand(ContinueCallback, new CommandID(GuidList.guidSoftwareDebuggerCmdSet, (int)PkgCmdIDList.cmdContinue));
+                _continueCommand = new OleMenuCommand(ContinueCallback,
+                    new CommandID(GuidList.guidSoftwareDebuggerCmdSet, (int) PkgCmdIDList.cmdContinue));
                 mcs.AddCommand(_continueCommand);
 
-                mcs.AddCommand(new OleMenuCommand(OnPortDropDownCombo, new CommandID(GuidList.guidSoftwareDebuggerCmdSet, (int)PkgCmdIDList.cmdSelectPort)));
-                mcs.AddCommand(new OleMenuCommand(OnPortDropDownComboList, new CommandID(GuidList.guidSoftwareDebuggerCmdSet, (int)PkgCmdIDList.cmdSelectPortList)));
+                mcs.AddCommand(new OleMenuCommand(OnPortDropDownCombo,
+                    new CommandID(GuidList.guidSoftwareDebuggerCmdSet, (int) PkgCmdIDList.cmdSelectPort)));
+                mcs.AddCommand(new OleMenuCommand(OnPortDropDownComboList,
+                    new CommandID(GuidList.guidSoftwareDebuggerCmdSet, (int) PkgCmdIDList.cmdSelectPortList)));
 
-                mcs.AddCommand(new OleMenuCommand(OnBaudDropDownCombo, new CommandID(GuidList.guidSoftwareDebuggerCmdSet, (int)PkgCmdIDList.cmdSelectBaud)));
-                mcs.AddCommand(new OleMenuCommand(OnBaudDropDownComboList, new CommandID(GuidList.guidSoftwareDebuggerCmdSet, (int)PkgCmdIDList.cmdSelectBaudList)));
+                mcs.AddCommand(new OleMenuCommand(OnBaudDropDownCombo,
+                    new CommandID(GuidList.guidSoftwareDebuggerCmdSet, (int) PkgCmdIDList.cmdSelectBaud)));
+                mcs.AddCommand(new OleMenuCommand(OnBaudDropDownComboList,
+                    new CommandID(GuidList.guidSoftwareDebuggerCmdSet, (int) PkgCmdIDList.cmdSelectBaudList)));
 
-                mcs.AddCommand(new OleMenuCommand(OnOptions, new CommandID(GuidList.guidSoftwareDebuggerCmdSet, (int)PkgCmdIDList.cmdOptions)));
+                mcs.AddCommand(new OleMenuCommand(OnOptions,
+                    new CommandID(GuidList.guidSoftwareDebuggerCmdSet, (int) PkgCmdIDList.cmdOptions)));
             }
             _continueCommand.Enabled = _stepCommand.Enabled = false;
         }
@@ -94,84 +100,71 @@ namespace SoftwareDebuggerExtension
 
         private void OnPortDropDownComboList(object sender, EventArgs e)
         {
-            OleMenuCmdEventArgs eventArgs = e as OleMenuCmdEventArgs;
+            var eventArgs = e as OleMenuCmdEventArgs;
             _ports = SerialPort.GetPortNames();
-            if (_selectedPort == null)
-            {
-                _selectedPort = _ports.FirstOrDefault();
-            }
+            if (Port == null)
+                Port = _ports.FirstOrDefault();
             if (eventArgs != null)
             {
-                object inParam = eventArgs.InValue;
-                IntPtr vOut = eventArgs.OutValue;
+                var inParam = eventArgs.InValue;
+                var vOut = eventArgs.OutValue;
 
                 if (inParam != null)
-                {
-                    throw (new ArgumentException(Resources.InParamIllegal)); // force an exception to be thrown
-                }
-                else if (vOut != IntPtr.Zero)
-                {
-
+                    throw new ArgumentException(Resources.InParamIllegal); // force an exception to be thrown
+                if (vOut != IntPtr.Zero)
                     Marshal.GetNativeVariantForObject(_ports, vOut);
-                }
                 else
-                {
-                    throw (new ArgumentException(Resources.OutParamRequired)); // force an exception to be thrown
-                }
+                    throw new ArgumentException(Resources.OutParamRequired); // force an exception to be thrown
             }
         }
 
         private void OnPortDropDownCombo(object sender, EventArgs e)
         {
-            OleMenuCmdEventArgs eventArgs = e as OleMenuCmdEventArgs;
+            var eventArgs = e as OleMenuCmdEventArgs;
 
             if (eventArgs != null)
             {
-                string newChoice = eventArgs.InValue as string;
-                IntPtr vOut = eventArgs.OutValue;
+                var newChoice = eventArgs.InValue as string;
+                var vOut = eventArgs.OutValue;
 
                 if (vOut != IntPtr.Zero)
                 {
                     // when vOut is non-NULL, the IDE is requesting the current value for the combo
-                    Marshal.GetNativeVariantForObject(_selectedPort, vOut);
+                    Marshal.GetNativeVariantForObject(Port, vOut);
                 }
 
                 else if (newChoice != null)
                 {
                     // new value was selected or typed in
                     // see if it is one of our items
-                    bool validInput = false;
-                    int indexInput = -1;
+                    var validInput = false;
+                    var indexInput = -1;
                     var options = SerialPort.GetPortNames();
                     for (indexInput = 0; indexInput < _ports.Length; indexInput++)
-                    {
-                        if (string.Compare(_ports[indexInput], newChoice, StringComparison.CurrentCultureIgnoreCase) == 0)
+                        if (string.Compare(_ports[indexInput], newChoice, StringComparison.CurrentCultureIgnoreCase) ==
+                            0)
                         {
                             validInput = true;
                             break;
                         }
-                    }
 
                     if (validInput)
-                    {
-                        _selectedPort = _ports[indexInput];
-                    }
+                        Port = _ports[indexInput];
                     else
-                    {
-                        throw (new ArgumentException(Resources.ParamNotValidStringInList)); // force an exception to be thrown
-                    }
+                        throw new ArgumentException(Resources.ParamNotValidStringInList);
+                            // force an exception to be thrown
                 }
             }
             else
             {
                 // We should never get here; EventArgs are required.
-                throw (new ArgumentException(Resources.EventArgsRequired)); // force an exception to be thrown
+                throw new ArgumentException(Resources.EventArgsRequired); // force an exception to be thrown
             }
         }
 
         private void OnBaudDropDownComboList(object sender, EventArgs e)
         {
-            OleMenuCmdEventArgs eventArgs = e as OleMenuCmdEventArgs;
+            var eventArgs = e as OleMenuCmdEventArgs;
             if (_selectedBaudString == null)
             {
                 _selectedBaudString = "500000";
@@ -179,62 +172,41 @@ namespace SoftwareDebuggerExtension
             }
             if (eventArgs != null)
             {
-                object inParam = eventArgs.InValue;
-                IntPtr vOut = eventArgs.OutValue;
+                var inParam = eventArgs.InValue;
+                var vOut = eventArgs.OutValue;
 
                 if (inParam != null)
-                {
-                    throw (new ArgumentException(Resources.InParamIllegal)); // force an exception to be thrown
-                }
-                else if (vOut != IntPtr.Zero)
-                {
-
+                    throw new ArgumentException(Resources.InParamIllegal); // force an exception to be thrown
+                if (vOut != IntPtr.Zero)
                     Marshal.GetNativeVariantForObject(_bauds, vOut);
-                }
                 else
-                {
-                    throw (new ArgumentException(Resources.OutParamRequired)); // force an exception to be thrown
-                }
+                    throw new ArgumentException(Resources.OutParamRequired); // force an exception to be thrown
             }
         }
+
         private void OnBaudDropDownCombo(object sender, EventArgs e)
         {
-            if ((null == e) || (e == EventArgs.Empty))
-            {
-                // We should never get here; EventArgs are required.
-                throw (new ArgumentException(Resources.EventArgsRequired)); // force an exception to be thrown
-            }
+            if (null == e || e == EventArgs.Empty)
+                throw new ArgumentException(Resources.EventArgsRequired); // force an exception to be thrown
 
-            OleMenuCmdEventArgs eventArgs = e as OleMenuCmdEventArgs;
+            var eventArgs = e as OleMenuCmdEventArgs;
 
             if (eventArgs != null)
             {
-                object input = eventArgs.InValue;
-                IntPtr vOut = eventArgs.OutValue;
+                var input = eventArgs.InValue;
+                var vOut = eventArgs.OutValue;
 
                 if (vOut != IntPtr.Zero && input != null)
-                {
-                    throw (new ArgumentException(Resources.BothInOutParamsIllegal)); // force an exception to be thrown
-                }
-                else if (vOut != IntPtr.Zero)
-                {
-                    // when vOut is non-NULL, the IDE is requesting the current value for the combo
+                    throw new ArgumentException(Resources.BothInOutParamsIllegal); // force an exception to be thrown
+                if (vOut != IntPtr.Zero)
                     if (_selectedBaudString == null)
-                    {
                         Marshal.GetNativeVariantForObject("500000", vOut);
-                    }
                     else
-                    {
                         Marshal.GetNativeVariantForObject(_selectedBaudString, vOut);
-                    }
-
-                }
                 else if (input != null)
-                {
-                    // new zoom value was selected or typed in
-                    if (int.TryParse((string)input, out _selectedBaud))
+                    if (int.TryParse((string) input, out _selectedBaud))
                     {
-                        _selectedBaudString = (string)input;
+                        _selectedBaudString = (string) input;
                     }
                     else
                     {
@@ -248,19 +220,18 @@ namespace SoftwareDebuggerExtension
                             _selectedBaud = 500000;
                         }
                     }
-                }
                 else
-                {
-                    // We should never get here
-                    throw (new ArgumentException(Resources.InOutParamCantBeNULL)); // force an exception to be thrown
-                }
+                    throw new ArgumentException(Resources.InOutParamCantBeNULL); // force an exception to be thrown
             }
             else
             {
                 // We should never get here; EventArgs are required.
-                throw (new ArgumentException(Resources.EventArgsRequired)); // force an exception to be thrown
+                throw new ArgumentException(Resources.EventArgsRequired); // force an exception to be thrown
             }
         }
 
+        #region CommandIds
+
+        #endregion
     }
 }

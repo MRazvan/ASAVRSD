@@ -1,14 +1,13 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading;
+using System.Windows.Threading;
 using Atmel.VsIde.AvrStudio.Services.TargetService;
 using Atmel.VsIde.AvrStudio.Services.TargetService.TCF.Protocol;
 using Debugger.Server;
-using System.Windows.Threading;
-using System.Reflection;
-using SoftwareDebuggerExtension.SDebugger;
 
-namespace SoftwareDebuggerExtension
+namespace SoftwareDebuggerExtension.SDebugger
 {
     public delegate void DebugLeaveDelegate();
 
@@ -16,28 +15,15 @@ namespace SoftwareDebuggerExtension
 
     public delegate void MemoryChangedDelegate(string memId, long addr, long size);
 
-    class DebuggerEventsProxy : IEventListener
+    internal class DebuggerEventsProxy : IEventListener
     {
-        enum State
-        {
-            None,
-            Stopping,
-            PartialEnterDebug,
-            InDebug
-        }
-
-        public event DebugLeaveDelegate DebugLeave;
-        public event DebugEnterDelegate DebugEnter;
-        public event MemoryChangedDelegate MemoryChanged;
-
-        private bool _updateSuspended;
-        private State _state;
         private readonly IDebugServer _server;
         private readonly CountdownEvent _suspendBarrier;
         private Thread _notifyDebugEnterThread;
-        private Output _output;
+        private readonly Output _output;
+        private State _state;
 
-        public bool InDebug => _state == State.InDebug;
+        private bool _updateSuspended;
 
         public DebuggerEventsProxy(IDebugServer server, Output output)
         {
@@ -47,34 +33,7 @@ namespace SoftwareDebuggerExtension
             _state = State.None;
         }
 
-        public void Start(DebugTarget target)
-        {
-            _updateSuspended = true;
-            var channel = target.KnownTool.GetChannel();
-            var services = channel.GetRemoteServices().ToList();
-            services.ForEach(service => channel.AddEventListener(service, this));
-
-            _suspendBarrier.Reset();
-
-            _notifyDebugEnterThread = new Thread(HandleNotifyDebugEnter) { Name = "HandleNotifyDebugEnter" };
-            _notifyDebugEnterThread.Start();
-            _server.DebuggerAttached += Server_DebuggerAttached;
-        }
-
-        public void Stop(DebugTarget target)
-        {
-            var channel = target.KnownTool.GetChannel();
-            var services = channel.GetRemoteServices().ToList();
-            services.ForEach(service => channel.RemoveEventListener(service, this));
-
-            _state = State.Stopping;
-            _server.DebuggerAttached -= Server_DebuggerAttached;
-
-            _suspendBarrier.Reset();
-            _suspendBarrier.Signal(2);
-            _notifyDebugEnterThread.Join();
-            _state = State.None;
-        }
+        public bool InDebug => _state == State.InDebug;
 
         public void Event(string name, byte[] data)
         {
@@ -99,12 +58,45 @@ namespace SoftwareDebuggerExtension
                     _suspendBarrier.Signal();
                     break;
                 case "memoryChanged":
-                    object[] sequence = JSON.ParseSequence(data);
+                    var sequence = JSON.ParseSequence(data);
                     HandleMemoryChanged(sequence);
                     if (_state == State.PartialEnterDebug)
                         _state = State.InDebug;
                     break;
             }
+        }
+
+        public event DebugLeaveDelegate DebugLeave;
+        public event DebugEnterDelegate DebugEnter;
+        public event MemoryChangedDelegate MemoryChanged;
+
+        public void Start(DebugTarget target)
+        {
+            _updateSuspended = true;
+            var channel = target.KnownTool.GetChannel();
+            var services = channel.GetRemoteServices().ToList();
+            services.ForEach(service => channel.AddEventListener(service, this));
+
+            _suspendBarrier.Reset();
+
+            _notifyDebugEnterThread = new Thread(HandleNotifyDebugEnter) {Name = "HandleNotifyDebugEnter"};
+            _notifyDebugEnterThread.Start();
+            _server.DebuggerAttached += Server_DebuggerAttached;
+        }
+
+        public void Stop(DebugTarget target)
+        {
+            var channel = target.KnownTool.GetChannel();
+            var services = channel.GetRemoteServices().ToList();
+            services.ForEach(service => channel.RemoveEventListener(service, this));
+
+            _state = State.Stopping;
+            _server.DebuggerAttached -= Server_DebuggerAttached;
+
+            _suspendBarrier.Reset();
+            _suspendBarrier.Signal(2);
+            _notifyDebugEnterThread.Join();
+            _state = State.None;
         }
 
         private void Server_DebuggerAttached()
@@ -142,11 +134,12 @@ namespace SoftwareDebuggerExtension
             if (!properties.ContainsKey("addr") || !properties.ContainsKey("size"))
                 return;
 
-            var memAddr = (long)properties["addr"];
-            var memSize = (long)properties["size"];
+            var memAddr = (long) properties["addr"];
+            var memSize = (long) properties["size"];
             DebugWrite(MethodBase.GetCurrentMethod().Name + " - Memory Changed");
             if (MemoryChanged != null)
-                TargetService.MainThreadDispatcher.BeginInvoke(MemoryChanged, DispatcherPriority.Background, memId, memAddr, memSize);
+                TargetService.MainThreadDispatcher.BeginInvoke(MemoryChanged, DispatcherPriority.Background, memId,
+                    memAddr, memSize);
         }
 
         private void HandleNotifyDebugEnter()
@@ -172,6 +165,14 @@ namespace SoftwareDebuggerExtension
         private void DebugWrite(string message)
         {
             _output.DebugOutLine(message + $"  - {_suspendBarrier.CurrentCount} - {_state}");
+        }
+
+        private enum State
+        {
+            None,
+            Stopping,
+            PartialEnterDebug,
+            InDebug
         }
     }
 }
