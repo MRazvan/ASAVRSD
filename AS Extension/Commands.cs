@@ -139,7 +139,6 @@ namespace SoftwareDebuggerExtension
                     // see if it is one of our items
                     var validInput = false;
                     var indexInput = -1;
-                    var options = SerialPort.GetPortNames();
                     for (indexInput = 0; indexInput < _ports.Length; indexInput++)
                         if (string.Compare(_ports[indexInput], newChoice, StringComparison.CurrentCultureIgnoreCase) ==
                             0)
@@ -229,9 +228,5 @@ namespace SoftwareDebuggerExtension
                 throw new ArgumentException(Resources.EventArgsRequired); // force an exception to be thrown
             }
         }
-
-        #region CommandIds
-
-        #endregion
     }
 }

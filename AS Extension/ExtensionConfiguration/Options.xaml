@@ -1,9 +1,8 @@
-﻿<Window x:Class="SoftwareDebuggerExtension.Settings"
+﻿<Window x:Class="SoftwareDebuggerExtension.ExtensionConfiguration.Options"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:SoftwareDebuggerExtension"
         mc:Ignorable="d"
         Title="Software Debugger Options" MinHeight="450" Height="450" MinWidth="500" Width="500">
     <Window.Resources>
@@ -148,7 +147,8 @@
                 <TextBox x:Name="ideLocation" Grid.Row="0" Grid.Column="1" Margin="5, 10, 5, 20"
                          Text="{Binding Path=ArduinoPath}" />
                 <GroupBox Grid.Row="1" Grid.ColumnSpan="2" Header="Projects Debugging options" FontWeight="Bold"
-                          Padding="5" Margin="5">
+                          Padding="5" Margin="5"
+                          IsEnabled="{Binding Path=SolutionSettingsEnabled}">
                     <ScrollViewer>
                         <Grid Grid.IsSharedSizeScope="True">
                             <Grid.ColumnDefinitions>
@@ -191,7 +191,8 @@
 
                             <StackPanel Grid.Row="3" Grid.Column="0">
                                 <CheckBox Style="{DynamicResource SwitchStyle}" x:Name="eepromRead"
-                                          IsChecked="{Binding IsChecked_EEPROM_Read}" />
+                                          IsChecked="{Binding IsChecked_EEPROM_Read}" 
+                                          IsEnabled="false"/>
                             </StackPanel>
                             <StackPanel Grid.Row="3" Grid.Column="1">
                                 <Label Style="{DynamicResource Header}">EEPROM Read</Label>
@@ -200,7 +201,8 @@
 
                             <StackPanel Grid.Row="4" Grid.Column="0">
                                 <CheckBox Style="{DynamicResource SwitchStyle}" x:Name="eepromWrite"
-                                          IsChecked="{Binding IsChecked_EEPROM_Write}" />
+                                          IsChecked="{Binding IsChecked_EEPROM_Write}" 
+                                          IsEnabled="false"/>
                             </StackPanel>
                             <StackPanel Grid.Row="4" Grid.Column="1">
                                 <Label Style="{DynamicResource Header}">EEPROM Write</Label>

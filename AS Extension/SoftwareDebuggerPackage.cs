@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows;
 using Atmel.Studio.Services;
@@ -9,6 +10,7 @@ using EnvDTE;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using SoftwareDebuggerExtension.ExtensionConfiguration;
 using SoftwareDebuggerExtension.SDebugger;
 using Process = System.Diagnostics.Process;
 
@@ -36,10 +38,11 @@ namespace SoftwareDebuggerExtension
     public sealed class SoftwareDebuggerPackage : Package
     {
         private Commands _commands;
+        private SolutionEventsListener _solutionListener;
         private SimulatorDebugger _debugger;
         private DTE _dte;
         private Output _output;
-
+        
         /// <summary>
         ///     Default constructor of the package.
         ///     Inside this method you can place any initialization code that does not require
@@ -65,6 +68,7 @@ namespace SoftwareDebuggerExtension
         {
             Trace.WriteLine(string.Format(CultureInfo.CurrentCulture, "Entering Initialize() of: {0}", ToString()));
             base.Initialize();
+            
             // Add our command handlers for menu (commands must exist in the .vsct file)
             _commands = new Commands(this);
             _commands.Initialize();
@@ -72,21 +76,36 @@ namespace SoftwareDebuggerExtension
             _commands.Step += StepCallback;
             _commands.Continue += ContinueCallback;
             _commands.ShowOptions += ShowOptions;
+
+            _solutionListener = new SolutionEventsListener(this);
+            _solutionListener.Register();
+
             _output = new Output(this);
             _output.Initialize();
-            Trace.Listeners.Add(new VSTraceListener(_output));
+
             _debugger = new SimulatorDebugger(this, _output);
             _debugger.DebugStateChanged += () => _commands.SetDebugState(_debugger.CanRun);
             _dte = GetService(typeof(SDTE)) as DTE;
+
+            VSTraceListener.Instance.AddOutputPaneLogger(_output);
         }
 
         private void ShowOptions()
         {
-            var settings = new Settings();
-            settings.SetArduinoPath(string.Empty);
-            settings.SetProjectDefines(new List<string> {"CAPS_SAVE_CTX"});
-            settings.Owner = Application.Current.MainWindow;
-            settings.ShowDialog();
+            var settings = new Options {Owner = Application.Current.MainWindow};
+            var result = settings.ShowDialog();
+            if (result.HasValue && result.Value)
+            {
+                if (_dte.Solution != null)
+                    Settings.Instance.SaveSolutionSettings(_dte.Solution);
+                Settings.Instance.SaveExtensionSettings();
+            }
+            else
+            {
+                if (_dte.Solution != null)
+                    Settings.Instance.LoadSolutionSettings(_dte.Solution);
+                Settings.Instance.LoadExtensionSettings();
+            }
         }
 
         private void ContinueCallback()
@@ -99,46 +118,83 @@ namespace SoftwareDebuggerExtension
             _debugger.Step();
         }
 
-        private string GetArduinoIDE()
-        {
-            return @"D:\arduino-1.8.1\";
-        }
-
-        private void Alert(string text, string header)
+        private static void Alert(string text, string header)
         {
             ATServiceProvider.DialogService.ShowDialog(null, text, header, DialogButtonSet.Ok, DialogIcon.Exclamation);
         }
 
-        private void RunAndAttachCallback()
+        private bool IsValidForDebug(out ProjectInfo pi)
         {
+            pi = null;
+            if (_dte.ActiveSolutionProjects == null)
+            {
+                Alert("Please select the project to upload", "Error");
+                return false;
+            }
+
             var proj = _dte.ActiveSolutionProjects[0] as Project;
             if (proj == null)
             {
                 Alert("There is no active project", "Error");
-                return;
+                return false;
             }
 
-            var pi = new ProjectInfo(proj);
+            pi = new ProjectInfo(proj);
             if (string.IsNullOrWhiteSpace(pi.OutputPath))
             {
                 Alert("The active project has no output path", "Error");
-                return;
+                return false;
             }
             if (!pi.IsExecutable)
             {
                 Alert("The active project is not executable", "Error");
-                return;
+                return false;
             }
             if (pi.ToolName != "Simulator")
             {
                 Alert("The active project must have Simulator selected as a tool", "Error");
-                return;
+                return false;
             }
             if (string.IsNullOrWhiteSpace(_commands.Port))
             {
                 Alert("No com port selected\nPlease select a com port and try again", "Error");
-                return;
+                return false;
             }
+
+            if (string.IsNullOrWhiteSpace(Settings.Instance.ExtensionSettings.ArduinoIdeLocation))
+            {
+                Alert("Please configure the arduino location path\nGo to Debugger Options", "Error");
+                return false;
+            }
+
+            if (!Directory.Exists(Settings.Instance.ExtensionSettings.ArduinoIdeLocation))
+            {
+                Alert("The Arduino location path is invalid\nGo to Debugger Options", "Error");
+                return false;
+            }
+
+            if (!File.Exists(Settings.AvrDudeConfigFullPath))
+            {
+                Alert("The Arduino location path might be invalid\nAVR Dude configuration file was not found\nGo to Debugger Options", "Error");
+                return false;
+            }
+
+            if (!File.Exists(Settings.AvrDudeFullPath))
+            {
+                Alert("The Arduino location path might be invalid\nAVR Dude executable was not found\nGo to Debugger Options", "Error");
+                return false;
+            }
+
+            return true;
+        }
+
+        private void RunAndAttachCallback()
+        {
+            ProjectInfo pi;
+            if (!IsValidForDebug(out pi))
+                return;
+
+            UpdateProjectsSettings();
 
             // Start a build / upload the program, start the debugger and reset the target, 4 steps to debug :|
             _output.Activate(VSConstants.OutputWindowPaneGuid.BuildOutputPane_guid);
@@ -150,13 +206,12 @@ namespace SoftwareDebuggerExtension
             var prog = new Process();
             prog.StartInfo = new ProcessStartInfo
             {
-                FileName = $"{GetArduinoIDE()}hardware\\tools\\avr\\bin\\avrdude.exe",
+                FileName = $"{Settings.AvrDudeFullPath}",
                 CreateNoWindow = true,
                 UseShellExecute = false,
                 RedirectStandardError = true,
                 RedirectStandardOutput = true,
-                Arguments =
-                    $"\"-C{GetArduinoIDE()}hardware\\tools\\avr\\etc\\avrdude.conf\" -v -p{pi.Device?.Name.ToLower()} -carduino -P{_commands.Port} -b57600 -D -Uflash:w:\"{pi.OutputPath}\":i"
+                Arguments = $"\"-C{Settings.AvrDudeConfigFullPath}\" -v -p{pi.Device?.Name.ToLower()} -carduino -P{_commands.Port} -b57600 -D -Uflash:w:\"{pi.OutputPath}\":i"
             };
             prog.EnableRaisingEvents = true;
             prog.OutputDataReceived += (sender, e) => _output.DebugOutLine(e.Data);
@@ -164,12 +219,25 @@ namespace SoftwareDebuggerExtension
             prog.Start();
             prog.BeginErrorReadLine();
             prog.BeginOutputReadLine();
-            prog.WaitForExit();
+            prog.WaitForExit(5000);
 
             if (prog.ExitCode == 0)
             {
                 ATServiceProvider.EventsService.DebugActionChanged += EventsService_DebugActionChanged;
                 _dte.ExecuteCommand("Debug.Start");
+            }
+            else
+            {
+                Alert("Error uploading the program please check the COM port", "Error");
+            }
+        }
+
+        private void UpdateProjectsSettings()
+        {
+            foreach (Project proj in _dte.Solution.Projects)
+            {
+                var pi = new ProjectInfo(proj);
+                pi.AddDefines(Settings.Instance.SolutionSettings.Options, Settings.DebuggingCaps);
             }
         }
 

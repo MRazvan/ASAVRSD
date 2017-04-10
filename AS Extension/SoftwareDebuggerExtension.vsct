@@ -8,7 +8,8 @@
     
     <Menus>
         <Menu guid="guidSoftwareDebuggerCmdSet" id="TopLevelMenu" priority="0x700" type="Menu">
-            <Parent guid="guidSHLMainMenu" id="IDG_VS_MM_TOOLSADDINS" />
+            <Parent guid="guidSHLMainMenu" id="IDG_VS_MM_BUILDDEBUGRUN" />
+            <CommandFlag>DynamicVisibility</CommandFlag>
             <Strings>
                 <ButtonText>Debugger</ButtonText>
                 <CommandName>Debugger</CommandName>
@@ -16,7 +17,8 @@
         </Menu>
     
         <Menu guid="guidSoftwareDebuggerCmdSet" id="TopLevelMenuToolbar" priority="0x700" type="Toolbar">
-            <Parent guid="guidSHLMainMenu" id="IDG_VS_MM_TOOLSADDINS" />
+            <Parent guid="guidSHLMainMenu" id="IDG_VS_MM_BUILDDEBUGRUN" />
+            <CommandFlag>DynamicVisibility</CommandFlag>
             <Strings>
                 <ButtonText>Software Debugger</ButtonText>
                 <CommandName>Software Debugger</CommandName>
@@ -153,9 +155,23 @@
         </Combo>
     </Combos>
   </Commands>
+    <VisibilityConstraints>
+        <VisibilityItem guid="guidSoftwareDebuggerCmdSet"
+              id="TopLevelMenu"
+              context="UICONTEXT_SolutionHasSingleProject" />
+        <VisibilityItem guid="guidSoftwareDebuggerCmdSet"
+              id="TopLevelMenu"
+              context="UICONTEXT_SolutionHasMultipleProjects" />
+        
+        <VisibilityItem guid="guidSoftwareDebuggerCmdSet"
+              id="TopLevelMenuToolbar"
+              context="UICONTEXT_SolutionHasSingleProject" />
+        <VisibilityItem guid="guidSoftwareDebuggerCmdSet"
+              id="TopLevelMenuToolbar"
+              context="UICONTEXT_SolutionHasMultipleProjects" />
+    </VisibilityConstraints>
 
-
-  <Symbols>
+    <Symbols>
     <GuidSymbol name="guidSoftwareDebuggerPkg" value="{258c68ca-99da-4d20-ad47-55601b22a5d3}" />
     <GuidSymbol name="guidSoftwareDebuggerCmdSet" value="{7ac80e00-2e20-40be-b83d-f11bf8cc7ee8}">
         <IDSymbol name="TopLevelMenu" value="0x1000"/>

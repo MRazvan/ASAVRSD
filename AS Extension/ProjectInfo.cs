@@ -20,8 +20,6 @@ namespace SoftwareDebuggerExtension
             var activeConfiguration = configurationManager?.ActiveConfiguration;
             if (activeConfiguration != null)
             {
-                var props =
-                    activeConfiguration.Properties.OfType<Property>().Select(n => new {n.Name, n.Value}).ToList();
                 var outputType =
                     activeConfiguration.Properties.OfType<Property>().FirstOrDefault(prop => prop.Name == "OutputType");
                 IsExecutable = outputType?.Value == "Executable";
@@ -49,7 +47,7 @@ namespace SoftwareDebuggerExtension
         public ProjectToolchainOptions ToolchainOptions { get; }
         public IDevice Device { get; set; }
         public Project Project { get; set; }
-        public string ToolName { get; set; } = string.Empty;
+        public string ToolName { get; set; }
 
         public bool CanDebug()
         {
@@ -58,16 +56,22 @@ namespace SoftwareDebuggerExtension
 
         public void AddDefines(List<string> defines, List<string> allDefines)
         {
-            var changedCDefines = UpdateDefines(ToolchainOptions.CCompiler.SymbolDefines, defines, allDefines);
-            var changedCPPDefines = UpdateDefines(ToolchainOptions.CppCompiler.SymbolDefines, defines, allDefines);
-            if (changedCDefines || changedCPPDefines)
+            var changed = false;
+
+            if (ToolchainOptions.CCompiler != null)
+                changed |= UpdateDefines(ToolchainOptions.CCompiler.SymbolDefines, defines, allDefines);
+
+            if (ToolchainOptions.CppCompiler != null)
+                changed |= UpdateDefines(ToolchainOptions.CppCompiler.SymbolDefines, defines, allDefines);
+
+            if (changed)
                 ProjectHandle?.SetPropertyForAllConfiguration("ToolchainSettings", ToolchainOptions.ToString());
         }
 
         private bool UpdateDefines(IList<string> destination, IList<string> source, IList<string> allcustom)
         {
             var changed = false;
-            var removedDefines = allcustom.Intersect(source);
+            var removedDefines = allcustom.Where(c => !source.Contains(c)).ToList();
             foreach (var define in source)
                 if (!destination.Contains(define))
                 {
@@ -75,11 +79,16 @@ namespace SoftwareDebuggerExtension
                     destination.Add(define);
                 }
             foreach (var define in removedDefines)
-                if (destination.Contains(define))
+            {
+                while (destination.Contains(define))
                 {
                     destination.Remove(define);
                     changed = true;
                 }
+            }
+            var tmp = destination.Distinct().ToList();
+            destination.Clear();
+            tmp.ForEach(destination.Add);
             return changed;
         }
     }
