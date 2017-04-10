@@ -19,15 +19,15 @@ namespace SoftwareDebuggerExtension.SDebugger
         public delegate void DebugStateChangedDelegate();
 
         private static readonly Dictionary<string, object> sEmptyContextData = new Dictionary<string, object>();
-
-        private DebugTarget _debugTarget;
         private readonly DTE _dte;
         private readonly DebuggerEventsProxy _events;
         private readonly Output _output;
+        private readonly DebugServer _server;
+
+        private DebugTarget _debugTarget;
         private uint _pc;
         private IAddressSpace _ramSpace;
         private bool _running;
-        private readonly DebugServer _server;
         private State _state;
         private ITargetService _target;
 
@@ -39,6 +39,8 @@ namespace SoftwareDebuggerExtension.SDebugger
             _server = new DebugServer();
             _events = new DebuggerEventsProxy(_server, _output);
         }
+
+        public IDebugServer DebugServer => _server;
 
         public bool CanRun => _events.InDebug && _server.InDebug && _state == State.InDebug;
         public event DebugStateChangedDelegate DebugStateChanged;
@@ -153,7 +155,7 @@ namespace SoftwareDebuggerExtension.SDebugger
             DebugWrite(MethodBase.GetCurrentMethod().Name + " " + _dte.Debugger.CurrentMode +
                        $" {_debugTarget.TargetState}");
 
-            if (!_server.Caps.HasFlag(DebuggerCapabilities.CAPS_RAM_R_BIT))
+            if (!_server.Caps.HasFlag(DebuggerCapabilities.CAPS_RAM_W_BIT))
                 return;
             if (memId != _debugTarget.GetMemType("data"))
                 return;
@@ -191,7 +193,8 @@ namespace SoftwareDebuggerExtension.SDebugger
             TargetService.MainThreadDispatcher.BeginInvoke(new Action(() =>
             {
                 _debugTarget.NotifyTargetBreaked(
-                    new DebugTarget.TargetHaltedEventArgs(_pc * 2, "Extern Break", _debugTarget.ProcessesContextid,
+                    new DebugTarget.TargetHaltedEventArgs(_pc * 2, "Extern Break",
+                        _debugTarget.ProcessesContextid,
                         sEmptyContextData)
                 );
                 _state = State.InDebug;

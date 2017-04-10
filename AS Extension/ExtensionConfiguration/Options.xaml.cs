@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Windows;
-using Window = System.Windows.Window;
 
 namespace SoftwareDebuggerExtension.ExtensionConfiguration
 {
@@ -9,14 +8,14 @@ namespace SoftwareDebuggerExtension.ExtensionConfiguration
     /// </summary>
     public partial class Options : Window
     {
-        private List<string> SolutionOptions => Settings.Instance.SolutionSettings.Options;
-        public bool SolutionSettingsEnabled => Settings.Instance.SolutionSettingsLoaded;
-
         public Options()
         {
             InitializeComponent();
             DataContext = this;
         }
+
+        private List<string> SolutionOptions => Settings.Instance.SolutionSettings.Options;
+        public bool SolutionSettingsEnabled => Settings.Instance.SolutionSettingsLoaded;
 
         public string ArduinoPath
         {
@@ -64,6 +63,7 @@ namespace SoftwareDebuggerExtension.ExtensionConfiguration
         {
             Close();
         }
+
         private void UpdateSolutionCaps(bool enableCap, string cap)
         {
             if (enableCap == false)

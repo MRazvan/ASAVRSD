@@ -191,8 +191,8 @@
 
                             <StackPanel Grid.Row="3" Grid.Column="0">
                                 <CheckBox Style="{DynamicResource SwitchStyle}" x:Name="eepromRead"
-                                          IsChecked="{Binding IsChecked_EEPROM_Read}" 
-                                          IsEnabled="false"/>
+                                          IsChecked="{Binding IsChecked_EEPROM_Read}"
+                                          IsEnabled="false" />
                             </StackPanel>
                             <StackPanel Grid.Row="3" Grid.Column="1">
                                 <Label Style="{DynamicResource Header}">EEPROM Read</Label>
@@ -201,8 +201,8 @@
 
                             <StackPanel Grid.Row="4" Grid.Column="0">
                                 <CheckBox Style="{DynamicResource SwitchStyle}" x:Name="eepromWrite"
-                                          IsChecked="{Binding IsChecked_EEPROM_Write}" 
-                                          IsEnabled="false"/>
+                                          IsChecked="{Binding IsChecked_EEPROM_Write}"
+                                          IsEnabled="false" />
                             </StackPanel>
                             <StackPanel Grid.Row="4" Grid.Column="1">
                                 <Label Style="{DynamicResource Header}">EEPROM Write</Label>

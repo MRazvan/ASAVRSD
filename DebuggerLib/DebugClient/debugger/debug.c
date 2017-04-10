@@ -55,7 +55,7 @@
 
 //////////////////////////////////////////////////////////////////////////
 //	Enable flash read so we can read the program from memory
-#define CAPS_FLASH_READ
+//#define CAPS_FLASH_READ
 
 //////////////////////////////////////////////////////////////////////////
 //	Enable flash write so we can change the program memory (AVR's support this only from bootloader)
@@ -63,11 +63,11 @@
 
 //////////////////////////////////////////////////////////////////////////
 //	Enable EEPROM read
-#define CAPS_EEPROM_READ
+//#define CAPS_EEPROM_READ
 
 //////////////////////////////////////////////////////////////////////////
 // Enable EEPROM write
-#define CAPS_EEPROM_WRITE
+//#define CAPS_EEPROM_WRITE
 
 //////////////////////////////////////////////////////////////////////////
 //	Enable code execution / method invocation, not done for now
@@ -77,15 +77,16 @@
 //	Enable single step support
 //#define CAPS_SINGLE_STEP
 
-//#define CAPS_BREAK_ON_START
-
 //////////////////////////////////////////////////////////////////////////
 //	Read the debug structure information in cases where we don't have access
 //		to the compiled program (elf file). For example when the debugger is 
 //		included in the bootloader, we don't have the bootloader file at our disposal
 //		we need to know the location of the debug context, the structure will be based
 //		on the CAPS enabled and retrieved when the debugging starts
-#define CAPS_DBG_CTX_ADDR
+//#define CAPS_DBG_CTX_ADDR
+
+//#define CAPS_BREAK_ON_START
+
 
 #if defined(MINIMIZE_FLASH) && defined(MINIMIZE_RAM)
 #error	"Cannot minimize flash an ram at the same time, please choose only one"
@@ -100,13 +101,9 @@
 	#define ATTRIBUTES    __attribute__ ((optimize("-Os")))
 #endif
 
-#define METHOD_CALL(x) INLINE x ATTRIBUTES
-
 #ifndef _BV
 	#define _BV(v) (1 << (v))
 #endif
-
-
 
 #ifdef CAPS_SINGLE_STEP
 	#define CAPS_FLAG_SINGLE_STEP _BV(CAPS_SINGLE_STEP_BIT)
@@ -114,7 +111,6 @@
 	#ifndef CAPS_SAVE_CTX
 		#define CAPS_SAVE_CTX
 	#endif
-	//#define CAPS_SET_PC
 #else
 	#define CAPS_FLAG_SINGLE_STEP 0
 #endif
@@ -123,6 +119,12 @@
 	#define CAPS_FLAG_SET_PC _BV(CAPS_SET_PC_BIT)
 #else
 	#define CAPS_FLAG_SET_PC 0
+#endif
+
+#ifdef CAPS_SAVE_CTX
+	#ifndef CAPS_DBG_CTX_ADDR
+		#define CAPS_DBG_CTX_ADDR
+	#endif
 #endif
 
 #ifdef CAPS_UART_HIGH_SPEED
@@ -186,7 +188,7 @@
 //////////////////////////////////////////////////////////////////////////
 //	The debug capabilities we have
 #define CAPS_0	_BV(CAPS_RAM_R_BIT) | CAPS_FLAG_RAM_WRITE | CAPS_FLAG_FLASH_READ | CAPS_FLAG_FLASH_WRITE | CAPS_FLAG_EEPROM_READ | CAPS_FLAG_EEPROM_WRITE | CAPS_FLAG_EXECUTE | CAPS_FLAG_DBG_CTX_ADDR
-#define CAPS_1	CAPS_FLAG_UART_HIGH_SPEED | CAPS_FLAG_SAVE_CTX
+#define CAPS_1	CAPS_FLAG_UART_HIGH_SPEED | CAPS_FLAG_SAVE_CTX | CAPS_FLAG_SINGLE_STEP
 
 #define DBG_FLAG_EXECUTING			0
 #define DBG_FLAG_UART_HIGH_SPEED	1

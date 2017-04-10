@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
@@ -124,7 +125,7 @@ namespace Debugger.Server
         private void ExecuteCommandWithClearState(IDebugCommand command)
         {
             InDebug = false;
-
+            Trace.WriteLine("Debugger Server - Execute Command with Clear " + command);
             // Clear the commands buffer
             DebugCommandWrapper cmd;
             while (_commands.TryDequeue(out cmd))
@@ -135,10 +136,9 @@ namespace Debugger.Server
             _currentCommandReceiveIdx = 0;
 
             _state = DebuggerState.NotConnected;
+            _transport.Write(command.CommandBuffer);
             // Notify anyone interested
             DebuggerDetached?.Invoke();
-
-            _transport.Write(command.CommandBuffer);
         }
 
         public void ResetTarget()
@@ -157,6 +157,7 @@ namespace Debugger.Server
                     //  We have the receive task that is running async
                     if (tempCommand.Command.ResponseSize == 0)
                     {
+                        Trace.WriteLine("Debugger Server - Send Command " + tempCommand.Command);
                         _transport.Write(tempCommand.Command.CommandBuffer);
                         tempCommand.TCS.SetResult(_emptyCommandResponse);
                         continue; // Try the next command, do not wait
@@ -165,6 +166,7 @@ namespace Debugger.Server
                     _currentCommandBuffer = new byte[tempCommand.Command.ResponseSize];
                     _currentCommandReceiveIdx = 0;
                     _currentCommand = tempCommand;
+                    Trace.WriteLine("Debugger Server - Send Command " + tempCommand.Command);
                     _transport.Write(_currentCommand.Command.CommandBuffer);
                 }
 
@@ -219,6 +221,7 @@ namespace Debugger.Server
                 DettectDebugRequest(data);
                 if (_state != DebuggerState.NotConnected)
                 {
+                    Trace.WriteLine($"Debugger Attached Version = {DebugVersion}, Signature = 0x{DeviceSignature:X8}, Caps = {Caps}");
                     InDebug = true;
                     Task.Run(() => { DebuggerAttached?.Invoke(); });
                 }
@@ -230,11 +233,13 @@ namespace Debugger.Server
                     _currentCommandBuffer[_currentCommandReceiveIdx++] = data;
                     if (_currentCommandReceiveIdx != _currentCommand.Command.ResponseSize)
                         return;
+                    Trace.WriteLine("Debugger Server - DONE Command " + _currentCommand.Command);
                     _currentCommand.TCS.SetResult(_currentCommandBuffer);
                     _currentCommand = null;
                 }
                 else
                 {
+                    //Trace.WriteLine($"Debugger Server - Unknown Data 0x{data:X2} - `{Convert.ToChar(data)}`");
                     UnknownData?.Invoke(data);
                 }
             }

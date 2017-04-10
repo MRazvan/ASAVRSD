@@ -5,7 +5,7 @@ using SoftwareDebuggerExtension.ExtensionConfiguration;
 
 namespace SoftwareDebuggerExtension
 {
-    class SolutionEventsListener : IVsSolutionEvents
+    internal class SolutionEventsListener : IVsSolutionEvents
     {
         private readonly IServiceProvider _serviceProvider;
         private uint _cookie;
@@ -13,12 +13,6 @@ namespace SoftwareDebuggerExtension
         public SolutionEventsListener(IServiceProvider serviceProvider)
         {
             _serviceProvider = serviceProvider;
-        }
-
-        public void Register()
-        {
-            var solutionService = _serviceProvider.GetService(typeof(SVsSolution)) as IVsSolution;
-            solutionService?.AdviseSolutionEvents(this, out _cookie);
         }
 
         public int OnAfterOpenProject(IVsHierarchy pHierarchy, int fAdded)
@@ -73,6 +67,12 @@ namespace SoftwareDebuggerExtension
         {
             Settings.Instance.SolutionSettingsLoaded = false;
             return 0;
+        }
+
+        public void Register()
+        {
+            var solutionService = _serviceProvider.GetService(typeof(SVsSolution)) as IVsSolution;
+            solutionService?.AdviseSolutionEvents(this, out _cookie);
         }
     }
 }

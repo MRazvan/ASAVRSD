@@ -17,7 +17,6 @@
 #define DEBUG_COM_KEY_2				0xA9
 #define DEBUG_COM_KEY_3				0x15
 #define DEBUG_COM_KEY_4				0x84
-#define DEBUG_COM_KEY				{ DEBUG_COM_KEY_0, DEBUG_COM_KEY_1, DEBUG_COM_KEY_2, DEBUG_COM_KEY_3, DEBUG_COM_KEY_4 }
 //////////////////////////////////////////////////////////////////////////
 //	Requests
 #define DEBUG_REQ_CONTINUE			0x02

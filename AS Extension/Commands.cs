@@ -3,7 +3,9 @@ using System.ComponentModel.Design;
 using System.IO.Ports;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Debugger.Server;
 using Microsoft.VisualStudio.Shell;
+using SoftwareDebuggerExtension.SDebugger;
 
 namespace SoftwareDebuggerExtension
 {
@@ -25,6 +27,7 @@ namespace SoftwareDebuggerExtension
         private int _selectedBaud;
         private string _selectedBaudString;
         private OleMenuCommand _stepCommand;
+        private OleMenuCommand _attachCommand;
 
         public Commands(IServiceProvider serviceProvider)
         {
@@ -47,8 +50,9 @@ namespace SoftwareDebuggerExtension
             if (null != mcs)
             {
                 // Create the command for the menu item.
-                mcs.AddCommand(new OleMenuCommand(AttachCallback,
-                    new CommandID(GuidList.guidSoftwareDebuggerCmdSet, (int) PkgCmdIDList.cmdAttach)));
+                _attachCommand = new OleMenuCommand(AttachCallback,
+                    new CommandID(GuidList.guidSoftwareDebuggerCmdSet, (int) PkgCmdIDList.cmdAttach));
+                mcs.AddCommand(_attachCommand);
                 _stepCommand = new OleMenuCommand(StepCallback,
                     new CommandID(GuidList.guidSoftwareDebuggerCmdSet, (int) PkgCmdIDList.cmdStep));
                 mcs.AddCommand(_stepCommand);
@@ -78,9 +82,13 @@ namespace SoftwareDebuggerExtension
             ShowOptions?.Invoke();
         }
 
-        public void SetDebugState(bool inDebug)
+        public void SetDebugState(SimulatorDebugger server)
         {
-            _stepCommand.Enabled = _continueCommand.Enabled = inDebug;
+            _stepCommand.Enabled = _continueCommand.Enabled = server.CanRun;
+            if (!server.DebugServer.Caps.HasFlag(DebuggerCapabilities.CAPS_SINGLE_STEP_BIT))
+            {
+                _stepCommand.Enabled = false;
+            }
         }
 
         private void ContinueCallback(object sender, EventArgs e)
@@ -227,6 +235,16 @@ namespace SoftwareDebuggerExtension
                 // We should never get here; EventArgs are required.
                 throw new ArgumentException(Resources.EventArgsRequired); // force an exception to be thrown
             }
+        }
+
+        public void DisableUpload()
+        {
+            _attachCommand.Enabled = false;
+        }
+
+        public void EnableUpload()
+        {
+            _attachCommand.Enabled = true;
         }
     }
 }

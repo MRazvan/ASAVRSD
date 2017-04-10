@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
@@ -84,10 +85,11 @@ namespace SoftwareDebuggerExtension
             _output.Initialize();
 
             _debugger = new SimulatorDebugger(this, _output);
-            _debugger.DebugStateChanged += () => _commands.SetDebugState(_debugger.CanRun);
+            _debugger.DebugStateChanged += () => _commands.SetDebugState(_debugger);
             _dte = GetService(typeof(SDTE)) as DTE;
 
             VSTraceListener.Instance.AddOutputPaneLogger(_output);
+            VSTraceListener.Instance.SetVerboseOutput(true);
         }
 
         private void ShowOptions()
@@ -195,11 +197,17 @@ namespace SoftwareDebuggerExtension
                 return;
 
             UpdateProjectsSettings();
-
+            _commands.DisableUpload();
             // Start a build / upload the program, start the debugger and reset the target, 4 steps to debug :|
             _output.Activate(VSConstants.OutputWindowPaneGuid.BuildOutputPane_guid);
-            _dte.Solution.SolutionBuild.Build(true);
+            _dte.Events.BuildEvents.OnBuildDone += BuildEventsOnOnBuildDone;
+            _dte.ExecuteCommand("Build.RebuildSolution");
+        }
 
+        private void BuildEventsOnOnBuildDone(vsBuildScope scope, vsBuildAction action)
+        {
+            _dte.Events.BuildEvents.OnBuildDone -= BuildEventsOnOnBuildDone;
+            var pi = new ProjectInfo(_dte.ActiveSolutionProjects[0] as Project);
 
             _output.Activate(Output.SDDebugOutputPane);
             // Upload the program
@@ -228,6 +236,7 @@ namespace SoftwareDebuggerExtension
             }
             else
             {
+                _commands.EnableUpload();
                 Alert("Error uploading the program please check the COM port", "Error");
             }
         }
@@ -251,6 +260,7 @@ namespace SoftwareDebuggerExtension
             else if (e.DebugAction == DebugAction.Detaching)
             {
                 ATServiceProvider.EventsService.DebugActionChanged -= EventsService_DebugActionChanged;
+                _commands.EnableUpload();
                 _debugger.Stop();
             }
         }

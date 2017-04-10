@@ -10,8 +10,6 @@ namespace SoftwareDebuggerExtension
     {
         private readonly List<IExtensionLogger> _loggers;
 
-        public static VSTraceListener Instance { get; private set; }
-
         static VSTraceListener()
         {
             Instance = new VSTraceListener();
@@ -22,6 +20,8 @@ namespace SoftwareDebuggerExtension
             _loggers = new List<IExtensionLogger> {new FileTraceWriter()};
         }
 
+        public static VSTraceListener Instance { get; private set; }
+
         public void AddOutputPaneLogger(Output output)
         {
             _loggers.Add(new OutputPanelLogger(output));
@@ -30,13 +30,9 @@ namespace SoftwareDebuggerExtension
         public void SetVerboseOutput(bool verbose)
         {
             if (verbose)
-            {
                 Trace.Listeners.Add(this);
-            }
             else
-            {
                 Trace.Listeners.Remove(this);
-            }
         }
 
         public override void Write(string message)
@@ -63,13 +59,13 @@ namespace SoftwareDebuggerExtension
         }
     }
 
-    interface IExtensionLogger
+    internal interface IExtensionLogger
     {
         void WriteLine(string message);
         void Write(string message);
     }
 
-    class FileTraceWriter : IExtensionLogger
+    internal class FileTraceWriter : IExtensionLogger
     {
         private readonly StreamWriter _writer;
 
@@ -91,7 +87,7 @@ namespace SoftwareDebuggerExtension
         }
     }
 
-    class OutputPanelLogger : IExtensionLogger
+    internal class OutputPanelLogger : IExtensionLogger
     {
         private readonly Output _output;
 
