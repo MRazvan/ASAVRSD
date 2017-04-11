@@ -42,40 +42,40 @@
 
 //////////////////////////////////////////////////////////////////////////
 //	Enable the functionality to change the RAM memory
-//#define CAPS_RAM_WRITE
+//CAPS_RAM_WRITE
 
 //////////////////////////////////////////////////////////////////////////
 //	Enable high speed UART (500000) this maps perfectly with 4,8,16,20Mhz crystals
 //		it also allows us to read / write fast from / to memory
-//#define CAPS_UART_HIGH_SPEED
+//CAPS_UART_HIGH_SPEED
 
 //////////////////////////////////////////////////////////////////////////
 //	Save the registers (R0...R31), the return PC address (from stack) and the stack pointer
-//#define CAPS_SAVE_CTX
+//CAPS_SAVE_CTX
 
 //////////////////////////////////////////////////////////////////////////
 //	Enable flash read so we can read the program from memory
-//#define CAPS_FLASH_READ
+//CAPS_FLASH_READ
 
 //////////////////////////////////////////////////////////////////////////
 //	Enable flash write so we can change the program memory (AVR's support this only from bootloader)
-//#define CAPS_FLASH_WRITE
+//CAPS_FLASH_WRITE
 
 //////////////////////////////////////////////////////////////////////////
 //	Enable EEPROM read
-//#define CAPS_EEPROM_READ
+//CAPS_EEPROM_READ
 
 //////////////////////////////////////////////////////////////////////////
 // Enable EEPROM write
-//#define CAPS_EEPROM_WRITE
+//CAPS_EEPROM_WRITE
 
 //////////////////////////////////////////////////////////////////////////
 //	Enable code execution / method invocation, not done for now
-//#define CAPS_EXECUTE
+//CAPS_EXECUTE
 
 //////////////////////////////////////////////////////////////////////////
 //	Enable single step support
-//#define CAPS_SINGLE_STEP
+//CAPS_SINGLE_STEP
 
 //////////////////////////////////////////////////////////////////////////
 //	Read the debug structure information in cases where we don't have access
@@ -83,9 +83,7 @@
 //		included in the bootloader, we don't have the bootloader file at our disposal
 //		we need to know the location of the debug context, the structure will be based
 //		on the CAPS enabled and retrieved when the debugging starts
-//#define CAPS_DBG_CTX_ADDR
-
-//#define CAPS_BREAK_ON_START
+//CAPS_DBG_CTX_ADDR
 
 
 #if defined(MINIMIZE_FLASH) && defined(MINIMIZE_RAM)
@@ -107,24 +105,11 @@
 
 #ifdef CAPS_SINGLE_STEP
 	#define CAPS_FLAG_SINGLE_STEP _BV(CAPS_SINGLE_STEP_BIT)
-	#define CAPS_DBG_CTX_ADDR
 	#ifndef CAPS_SAVE_CTX
 		#define CAPS_SAVE_CTX
 	#endif
 #else
 	#define CAPS_FLAG_SINGLE_STEP 0
-#endif
-
-#ifdef CAPS_SET_PC
-	#define CAPS_FLAG_SET_PC _BV(CAPS_SET_PC_BIT)
-#else
-	#define CAPS_FLAG_SET_PC 0
-#endif
-
-#ifdef CAPS_SAVE_CTX
-	#ifndef CAPS_DBG_CTX_ADDR
-		#define CAPS_DBG_CTX_ADDR
-	#endif
 #endif
 
 #ifdef CAPS_UART_HIGH_SPEED
@@ -138,6 +123,9 @@
 #endif
 
 #ifdef CAPS_SAVE_CTX
+	#ifndef CAPS_DBG_CTX_ADDR
+		#define CAPS_DBG_CTX_ADDR
+	#endif
 	#define CAPS_FLAG_SAVE_CTX _BV(CAPS_SAVE_CONTEXT_BIT)
 #else
 	#define CAPS_FLAG_SAVE_CTX 0
@@ -194,7 +182,6 @@
 #define DBG_FLAG_UART_HIGH_SPEED	1
 #define DBG_SINGLE_STEP_ISR			2
 #define DBG_WILL_SINGLE_STEP		3
-
 
 #define INTERRUPT_FLAG_BIT			7
 
@@ -288,7 +275,6 @@ typedef struct {
 //////////////////////////////////////////////////////////////////////////
 // We don't need the context to be initialized, we don't care about the data
 //	that is originally in there
-__attribute__((section(".noinit")))
 t_dbg_context dbg_context;
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -545,11 +531,7 @@ void dbg_disable_interrupts(){
 }
 
 #ifdef CAPS_SAVE_CTX
-	#ifdef CAPS_BREAK_ON_START
-		__attribute__ ((naked, optimize("-Os"), section(".init3")))
-	#else
-		__attribute__ ((naked, optimize("-Os")))
-	#endif
+__attribute__ ((naked, optimize("-Os")))
 #else
 __attribute__ ((optimize("-Os")))
 #endif
@@ -560,13 +542,14 @@ void dbg_brk() {
 #ifdef CAPS_EXECUTE
 	if (dbg_context.ctx_state & _BV(DBG_FLAG_EXECUTING)){
 		dbg_leave_debug();
-		return;
+		asm volatile("ret \n\t");
 	}
 	else dbg_context.ctx_state |= _BV(DBG_FLAG_EXECUTING);
 #endif
 
 #ifdef CAPS_SINGLE_STEP
 if (dbg_context.ctx_state & _BV(DBG_SINGLE_STEP_ISR)){
+	dbg_context.ctx_state &= ~_BV(DBG_SINGLE_STEP_ISR);
 	disable_single_step();
 }
 #endif
@@ -609,14 +592,6 @@ if (dbg_context.ctx_state & _BV(DBG_SINGLE_STEP_ISR)){
 			*dbg_context.mem_op.buff.ptr++ = dbg_get_ch();
 		}
 	}
-	#endif
-	#ifdef CAPS_SET_PC
-		else if (dbg_context.tmp_u8 == DEBUG_REQ_SET_PC){
-			dbg_read_mem_op(); // Read the address and the size (the size will almost always be 2)
-			asm volatile (
-				""
-			);
-		}
 	#endif
 	#ifdef CAPS_UART_HIGH_SPEED
 		else if (dbg_context.tmp_u8 == DEBUG_REQ_UART_HIGH_SPEED){

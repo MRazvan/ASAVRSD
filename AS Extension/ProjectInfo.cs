@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using Atmel.Studio.Extensibility.Toolchain;
+using Atmel.Studio.Framework;
 using Atmel.Studio.Services;
 using Atmel.Studio.Services.Device;
 using EnvDTE;
@@ -65,7 +66,14 @@ namespace SoftwareDebuggerExtension
                 changed |= UpdateDefines(ToolchainOptions.CppCompiler.SymbolDefines, defines, allDefines);
 
             if (changed)
-                ProjectHandle?.SetPropertyForAllConfiguration("ToolchainSettings", ToolchainOptions.ToString());
+            {
+                ProjectHandle?.GetConfigNames()
+                    .Where(config => config.ToLower().Contains("debug"))
+                    .ForEach(config =>
+                    {
+                        ProjectHandle?.SetProperty("ToolchainSettings", ToolchainOptions.ToString(), config);
+                    });
+            }
         }
 
         private bool UpdateDefines(IList<string> destination, IList<string> source, IList<string> allcustom)

@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="Software Debugger Options" MinHeight="450" Height="450" MinWidth="500" Width="500">
+        Title="Software Debugger Options" MinHeight="550" Height="550" MinWidth="500" Width="500">
     <Window.Resources>
         <LinearGradientBrush x:Key="CheckedOrange" StartPoint="0,0" EndPoint="0,1">
             <GradientStop Color="#FFCA6A13" Offset="0" />
@@ -141,12 +141,29 @@
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="auto" />
+                    <RowDefinition Height="auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
                 <Label Grid.Row="0" Grid.Column="0" Margin="5">Arduino IDE Location :</Label>
-                <TextBox x:Name="ideLocation" Grid.Row="0" Grid.Column="1" Margin="5, 10, 5, 20"
+                <TextBox Grid.Row="0" Grid.Column="1" Margin="5, 10, 5, 20"
                          Text="{Binding Path=ArduinoPath}" />
-                <GroupBox Grid.Row="1" Grid.ColumnSpan="2" Header="Projects Debugging options" FontWeight="Bold"
+                
+                <GroupBox Grid.Row="1" Grid.ColumnSpan="2" Grid.Column="0" Header="Extension settings" FontWeight="Bold"
+                          Padding="5" Margin="5">
+                    <Grid Grid.IsSharedSizeScope="True">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <CheckBox Grid.Column="0" Style="{DynamicResource SwitchStyle}"
+                                        IsChecked="{Binding VerboseLogging}"/>
+                        <StackPanel Grid.Row="0" Grid.Column="1">
+                            <Label Style="{DynamicResource Header}">Verbose Logging</Label>
+                            <TextBlock Style="{DynamicResource Info}">Enables the logging of all messages from the plugins and studio</TextBlock>
+                        </StackPanel>
+                    </Grid>
+                </GroupBox>
+                <GroupBox Grid.Row="2" Grid.ColumnSpan="2" Grid.Column="0" Header="Projects Debugging options" FontWeight="Bold"
                           Padding="5" Margin="5"
                           IsEnabled="{Binding Path=SolutionSettingsEnabled}">
                     <ScrollViewer>
@@ -162,48 +179,36 @@
                                 <RowDefinition Height="auto" SharedSizeGroup="checkboxRow" />
                                 <RowDefinition Height="auto" SharedSizeGroup="checkboxRow" />
                             </Grid.RowDefinitions>
-                            <StackPanel Grid.Row="0" Grid.Column="0">
-                                <CheckBox Style="{DynamicResource SwitchStyle}" x:Name="writeRam"
-                                          IsChecked="{Binding IsChecked_WriteRam}" />
-                            </StackPanel>
+                            <CheckBox Grid.Row="0" Grid.Column="0" Style="{DynamicResource SwitchStyle}" x:Name="writeRam"
+                                        IsChecked="{Binding IsChecked_WriteRam}" />
                             <StackPanel Grid.Row="0" Grid.Column="1">
                                 <Label Style="{DynamicResource Header}">Write RAM Support</Label>
                                 <TextBlock Style="{DynamicResource Info}">Enables the writing of ram when the program is in a breakpoint, meaning changing variables, changing IO registers and ram data</TextBlock>
                             </StackPanel>
 
-                            <StackPanel Grid.Row="1" Grid.Column="0">
-                                <CheckBox Style="{DynamicResource SwitchStyle}" x:Name="saveContext"
+                            <CheckBox Grid.Row="1" Grid.Column="0" Style="{DynamicResource SwitchStyle}" x:Name="saveContext"
                                           IsChecked="{Binding IsChecked_SaveContext}" />
-                            </StackPanel>
                             <StackPanel Grid.Row="1" Grid.Column="1">
                                 <Label Style="{DynamicResource Header}">Save Context</Label>
                                 <TextBlock Style="{DynamicResource Info}">Enables reading of the real values for the registers before the breakpoint is hit. (R0, R1, R2, R3 ... PC, SREG, Stack)</TextBlock>
                             </StackPanel>
 
-                            <StackPanel Grid.Row="2" Grid.Column="0">
-                                <CheckBox Style="{DynamicResource SwitchStyle}" x:Name="singleStep"
-                                          IsChecked="{Binding IsChecked_SingleStep}" />
-                            </StackPanel>
+                            <CheckBox Grid.Row="2" Grid.Column="0" Style="{DynamicResource SwitchStyle}" x:Name="singleStep"
+                                        IsChecked="{Binding IsChecked_SingleStep}" />
                             <StackPanel Grid.Row="2" Grid.Column="1">
                                 <Label Style="{DynamicResource Header}">Single Step</Label>
                                 <TextBlock Style="{DynamicResource Info}">Enable single stepping through code (One instruction at a time)</TextBlock>
                             </StackPanel>
 
-                            <StackPanel Grid.Row="3" Grid.Column="0">
-                                <CheckBox Style="{DynamicResource SwitchStyle}" x:Name="eepromRead"
-                                          IsChecked="{Binding IsChecked_EEPROM_Read}"
-                                          IsEnabled="false" />
-                            </StackPanel>
+                            <CheckBox Grid.Row="3" Grid.Column="0" Style="{DynamicResource SwitchStyle}" x:Name="eepromRead"
+                                        IsChecked="{Binding IsChecked_EEPROM_Read}"/>
                             <StackPanel Grid.Row="3" Grid.Column="1">
                                 <Label Style="{DynamicResource Header}">EEPROM Read</Label>
                                 <TextBlock Style="{DynamicResource Info}">Enable reading the EEPROM values in cases where the MCU has eeprom</TextBlock>
                             </StackPanel>
 
-                            <StackPanel Grid.Row="4" Grid.Column="0">
-                                <CheckBox Style="{DynamicResource SwitchStyle}" x:Name="eepromWrite"
-                                          IsChecked="{Binding IsChecked_EEPROM_Write}"
-                                          IsEnabled="false" />
-                            </StackPanel>
+                            <CheckBox Grid.Row="4" Grid.Column="0" Style="{DynamicResource SwitchStyle}" x:Name="eepromWrite"
+                                        IsChecked="{Binding IsChecked_EEPROM_Write}"/>
                             <StackPanel Grid.Row="4" Grid.Column="1">
                                 <Label Style="{DynamicResource Header}">EEPROM Write</Label>
                                 <TextBlock Style="{DynamicResource Info}">Enable writing the EEPROM values in cases where the MCU has eeprom</TextBlock>

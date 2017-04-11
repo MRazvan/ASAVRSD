@@ -19,6 +19,8 @@ namespace SoftwareDebuggerExtension
 
         public delegate void StepDelegate();
 
+        public delegate void ShowAboutDelegate();
+
         private readonly string[] _bauds = {"9600", "14400", "19200", "28800", "38400", "57600", "115200", "500000"};
 
         private readonly IServiceProvider _serviceProvider;
@@ -43,6 +45,7 @@ namespace SoftwareDebuggerExtension
         public event StepDelegate Step;
         public event ContinueDelegate Continue;
         public event ShowOptionsDelegate ShowOptions;
+        public event ShowAboutDelegate ShowAbout;
 
         public void Initialize()
         {
@@ -73,8 +76,16 @@ namespace SoftwareDebuggerExtension
 
                 mcs.AddCommand(new OleMenuCommand(OnOptions,
                     new CommandID(GuidList.guidSoftwareDebuggerCmdSet, (int) PkgCmdIDList.cmdOptions)));
+
+                mcs.AddCommand(new OleMenuCommand(OnAbout,
+                    new CommandID(GuidList.guidSoftwareDebuggerCmdSet, (int)PkgCmdIDList.cmdAbout)));
             }
-            _continueCommand.Enabled = _stepCommand.Enabled = false;
+            _attachCommand.Enabled = _continueCommand.Enabled = _stepCommand.Enabled = false;
+        }
+
+        private void OnAbout(object sender, EventArgs e)
+        {
+            ShowAbout?.Invoke();
         }
 
         private void OnOptions(object sender, EventArgs e)
@@ -116,11 +127,11 @@ namespace SoftwareDebuggerExtension
                 var vOut = eventArgs.OutValue;
 
                 if (inParam != null)
-                    throw new ArgumentException(Resources.InParamIllegal); // force an exception to be thrown
+                    throw new ArgumentException(Resources.Resources.InParamIllegal); // force an exception to be thrown
                 if (vOut != IntPtr.Zero)
                     Marshal.GetNativeVariantForObject(_ports, vOut);
                 else
-                    throw new ArgumentException(Resources.OutParamRequired); // force an exception to be thrown
+                    throw new ArgumentException(Resources.Resources.OutParamRequired); // force an exception to be thrown
             }
         }
 
@@ -156,14 +167,14 @@ namespace SoftwareDebuggerExtension
                     if (validInput)
                         Port = _ports[indexInput];
                     else
-                        throw new ArgumentException(Resources.ParamNotValidStringInList);
+                        throw new ArgumentException(Resources.Resources.ParamNotValidStringInList);
                     // force an exception to be thrown
                 }
             }
             else
             {
                 // We should never get here; EventArgs are required.
-                throw new ArgumentException(Resources.EventArgsRequired); // force an exception to be thrown
+                throw new ArgumentException(Resources.Resources.EventArgsRequired); // force an exception to be thrown
             }
         }
 
@@ -181,18 +192,18 @@ namespace SoftwareDebuggerExtension
                 var vOut = eventArgs.OutValue;
 
                 if (inParam != null)
-                    throw new ArgumentException(Resources.InParamIllegal); // force an exception to be thrown
+                    throw new ArgumentException(Resources.Resources.InParamIllegal); // force an exception to be thrown
                 if (vOut != IntPtr.Zero)
                     Marshal.GetNativeVariantForObject(_bauds, vOut);
                 else
-                    throw new ArgumentException(Resources.OutParamRequired); // force an exception to be thrown
+                    throw new ArgumentException(Resources.Resources.OutParamRequired); // force an exception to be thrown
             }
         }
 
         private void OnBaudDropDownCombo(object sender, EventArgs e)
         {
             if (null == e || e == EventArgs.Empty)
-                throw new ArgumentException(Resources.EventArgsRequired); // force an exception to be thrown
+                throw new ArgumentException(Resources.Resources.EventArgsRequired); // force an exception to be thrown
 
             var eventArgs = e as OleMenuCmdEventArgs;
 
@@ -202,7 +213,7 @@ namespace SoftwareDebuggerExtension
                 var vOut = eventArgs.OutValue;
 
                 if (vOut != IntPtr.Zero && input != null)
-                    throw new ArgumentException(Resources.BothInOutParamsIllegal); // force an exception to be thrown
+                    throw new ArgumentException(Resources.Resources.BothInOutParamsIllegal); // force an exception to be thrown
                 if (vOut != IntPtr.Zero)
                     if (_selectedBaudString == null)
                         Marshal.GetNativeVariantForObject("500000", vOut);
@@ -226,12 +237,12 @@ namespace SoftwareDebuggerExtension
                         }
                     }
                 else
-                    throw new ArgumentException(Resources.InOutParamCantBeNULL); // force an exception to be thrown
+                    throw new ArgumentException(Resources.Resources.InOutParamCantBeNULL); // force an exception to be thrown
             }
             else
             {
                 // We should never get here; EventArgs are required.
-                throw new ArgumentException(Resources.EventArgsRequired); // force an exception to be thrown
+                throw new ArgumentException(Resources.Resources.EventArgsRequired); // force an exception to be thrown
             }
         }
 

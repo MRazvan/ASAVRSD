@@ -31,6 +31,11 @@ namespace SoftwareDebuggerExtension.SDebugger
         private State _state;
         private ITargetService _target;
 
+        public IDebugServer DebugServer => _server;
+        public event DebugStateChangedDelegate DebugStateChanged;
+
+        public bool CanRun => _events.InDebug && _server.InDebug && _state == State.InDebug;
+
         public SimulatorDebugger(IServiceProvider serviceProvider, Output output)
         {
             _output = output;
@@ -39,12 +44,6 @@ namespace SoftwareDebuggerExtension.SDebugger
             _server = new DebugServer();
             _events = new DebuggerEventsProxy(_server, _output);
         }
-
-        public IDebugServer DebugServer => _server;
-
-        public bool CanRun => _events.InDebug && _server.InDebug && _state == State.InDebug;
-        public event DebugStateChangedDelegate DebugStateChanged;
-
 
         public void Start(ITransport transport)
         {
@@ -155,14 +154,19 @@ namespace SoftwareDebuggerExtension.SDebugger
             DebugWrite(MethodBase.GetCurrentMethod().Name + " " + _dte.Debugger.CurrentMode +
                        $" {_debugTarget.TargetState}");
 
-            if (!_server.Caps.HasFlag(DebuggerCapabilities.CAPS_RAM_W_BIT))
-                return;
-            if (memId != _debugTarget.GetMemType("data"))
-                return;
-            // The memory changed we need to update the physical device
             MemoryError[] errRanges;
-            var data = _debugTarget.Memory.GetMemory(memId, (ulong) addr, 1, (int) size, 0, out errRanges);
-            _server.AddCommand(new DebugCommand_Ram_Write((uint) addr, data));
+            if (memId== _debugTarget.GetMemType("data") && _server.Caps.HasFlag(DebuggerCapabilities.CAPS_RAM_W_BIT))
+            {
+                // The memory changed we need to update the physical device
+                var data = _debugTarget.Memory.GetMemory(memId, (ulong) addr, 1, (int) size, 0, out errRanges);
+                _server.AddCommand(new DebugCommand_Ram_Write((uint) addr, data));
+            }
+            if (memId == _debugTarget.GetMemType("eeprom") && _server.Caps.HasFlag(DebuggerCapabilities.CAPS_EEPROM_W_BIT))
+            {
+                var data = _debugTarget.Memory.GetMemory(memId, (ulong)addr, 1, (int)size, 0, out errRanges);
+                _server.AddCommand(new DebugCommand_EEPROM_Write((uint)addr, data));
+            }
+
         }
 
         private void EventsOnDebugEnter()
@@ -188,8 +192,14 @@ namespace SoftwareDebuggerExtension.SDebugger
             {
                 _pc = (uint) _debugTarget.ScriptInterface.CalcNumericValue("$pc", 0) / 2;
             }
-            _debugTarget.Memory.SetMemory(_debugTarget.GetMemType("data"), _ramSpace.Start, 1, ramData.Length, 0,
-                ramData, out status);
+            _debugTarget.Memory.SetMemory(_debugTarget.GetMemType("data"), _ramSpace.Start, 1, ramData.Length, 0, ramData, out status);
+            if (_server.Caps.HasFlag(DebuggerCapabilities.CAPS_EEPROM_R_BIT))
+            {
+                var eepromAddressSpace = _debugTarget.Device.GetAddressSpace("eeprom");
+                var eeprom = WaitForCommand(new DebugCommand_EEPROM_Read(0, (uint) eepromAddressSpace.Size));
+                _debugTarget.Memory.SetMemory(_debugTarget.GetMemType("eeprom"), eepromAddressSpace.Start, 1,
+                    eeprom.Length, 0, eeprom, out status);
+            }
             TargetService.MainThreadDispatcher.BeginInvoke(new Action(() =>
             {
                 _debugTarget.NotifyTargetBreaked(

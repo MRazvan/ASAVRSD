@@ -40,10 +40,12 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Commands\DebugCommand_EEPROM_Read.cs" />
     <Compile Include="Commands\DebugCommand_BaseRead.cs" />
     <Compile Include="Commands\DebugCommand_BaseWrite.cs" />
     <Compile Include="Commands\DebugCommand_Continue.cs" />
     <Compile Include="Commands\DebugCommand_CtxRead.cs" />
+    <Compile Include="Commands\DebugCommand_EEPROM_Write.cs" />
     <Compile Include="Commands\DebugCommand_Ram_Read.cs" />
     <Compile Include="Commands\DebugCommand_Ram_Write.cs" />
     <Compile Include="Commands\DebugCommand_Step.cs" />

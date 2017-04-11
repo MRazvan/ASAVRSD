@@ -14,5 +14,6 @@ namespace SoftwareDebuggerExtension
         public const uint cmdSelectBaud = 0x105;
         public const uint cmdSelectBaudList = 0x106;
         public const uint cmdOptions = 0x107;
+        public const uint cmdAbout = 0x108;
     }
 }

@@ -173,16 +173,17 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="About\AboutDialog.xaml.cs">
+      <DependentUpon>AboutDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Commands.cs" />
     <Compile Include="PathHelper.cs" />
     <Compile Include="ProjectInfo.cs" />
-    <Compile Include="ReflectionHelper.cs" />
-    <Compile Include="RunControlProxyWrapper.cs" />
     <Compile Include="Guids.cs" />
     <Compile Include="SDebugger\DebuggerEventsProxy.cs" />
     <Compile Include="SDebugger\Output.cs" />
     <Compile Include="SDebugger\SimulatorDebugger.cs" />
-    <Compile Include="Resources.Designer.cs">
+    <Compile Include="Resources\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
@@ -195,11 +196,11 @@
     <Compile Include="SoftwareDebuggerPackage.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PkgCmdID.cs" />
-    <Compile Include="SolutionEventsListener.cs" />
+    <Compile Include="SolutionHelper.cs" />
     <Compile Include="VSTraceListener.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Resources.resx">
+    <EmbeddedResource Include="Resources\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
       <SubType>Designer</SubType>
@@ -226,6 +227,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Resources\Package.ico" />
+    <EmbeddedResource Include="About\version.html" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.5">
@@ -246,6 +248,10 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <Page Include="About\AboutDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="ExtensionConfiguration\Options.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

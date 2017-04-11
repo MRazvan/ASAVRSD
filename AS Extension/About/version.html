@@ -1,0 +1,57 @@
+﻿<!DOCTYPE html>
+
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title></title>
+    <style>
+        body {
+            font-family: monospace;
+            font-size: 16px;
+        }
+        .header {
+            font-weight: bold;
+            font-size: 20px;
+        }
+        .description {
+            font-size: 14px;
+        }
+        .versions-list {
+            padding-left: 4px;
+        }
+        .version-header {
+            font-weight: bold;            
+        }
+        .version {
+            list-style-type: none;
+        }
+        .version-items {
+            list-style-type: disc;
+        }
+        .version-func {
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+<p class="header">Software debugger v1.0</p>
+<div class="description">
+    <span>Software debugger for AVR's, it is not made as a replacement for a physical debugger, it is made for some cases where an actual debugger is not needed.<br/>
+        Especially for Arduinos where soldering a header and attaching a debugger is extra work that might not be possible.<br/>
+     Single stepping uses one interrupt so if that interrupt is needed, single step must be disabled.</span><br/><br /><br />
+    <span>Created by Razvan Marinovici - github.com/MRazvan </span><br/>
+</div>
+<ul class="versions-list">
+    <li class="version">
+        <div class="version-header">Version 1.0</div>
+        <ul class="version-items">
+            <li class="version-func">Support only ATmega328 for now (Arduino)</li>
+            <li class="version-func">Read Ram support</li>
+            <li class="version-func">Write Ram support</li>
+            <li class="version-func">Save state support</li>
+            <li class="version-func">Single step support (uses one interrupt)</li>
+        </ul>
+    </li>
+</ul>
+</body>
+</html>

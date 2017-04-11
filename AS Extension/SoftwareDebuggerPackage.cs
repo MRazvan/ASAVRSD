@@ -9,6 +9,7 @@ using EnvDTE;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using SoftwareDebuggerExtension.About;
 using SoftwareDebuggerExtension.ExtensionConfiguration;
 using SoftwareDebuggerExtension.SDebugger;
 using Process = System.Diagnostics.Process;
@@ -40,7 +41,7 @@ namespace SoftwareDebuggerExtension
         private SimulatorDebugger _debugger;
         private DTE _dte;
         private Output _output;
-        private SolutionEventsListener _solutionListener;
+        private SolutionHelper _solutionHelper;
 
         /// <summary>
         ///     Default constructor of the package.
@@ -75,9 +76,9 @@ namespace SoftwareDebuggerExtension
             _commands.Step += StepCallback;
             _commands.Continue += ContinueCallback;
             _commands.ShowOptions += ShowOptions;
-
-            _solutionListener = new SolutionEventsListener(this);
-            _solutionListener.Register();
+            _commands.ShowAbout += ShowAbout;
+            _solutionHelper = new SolutionHelper(this, _commands);
+            _solutionHelper.Register();
 
             _output = new Output(this);
             _output.Initialize();
@@ -87,13 +88,20 @@ namespace SoftwareDebuggerExtension
             _dte = GetService(typeof(SDTE)) as DTE;
 
             VSTraceListener.Instance.AddOutputPaneLogger(_output);
-            VSTraceListener.Instance.SetVerboseOutput(true);
+        }
+
+        private void ShowAbout()
+        {
+            var settings = new AboutDialog() { Owner = Application.Current.MainWindow };
+            settings.ShowDialog();
         }
 
         private void ShowOptions()
         {
             var settings = new Options {Owner = Application.Current.MainWindow};
             var result = settings.ShowDialog();
+            VSTraceListener.Instance.SetVerboseOutput(Settings.Instance.ExtensionSettings.VerboseLogging);
+
             if (result.HasValue && result.Value)
             {
                 if (_dte.Solution != null)
@@ -106,6 +114,7 @@ namespace SoftwareDebuggerExtension
                     Settings.Instance.LoadSolutionSettings(_dte.Solution);
                 Settings.Instance.LoadExtensionSettings();
             }
+            _solutionHelper.UpdateProjectsSettings();
         }
 
         private void ContinueCallback()
@@ -198,7 +207,6 @@ namespace SoftwareDebuggerExtension
             if (!IsValidForDebug(out pi))
                 return;
 
-            UpdateProjectsSettings();
             _commands.DisableUpload();
             // Start a build / upload the program, start the debugger and reset the target, 4 steps to debug :|
             _output.Activate(VSConstants.OutputWindowPaneGuid.BuildOutputPane_guid);
@@ -231,6 +239,8 @@ namespace SoftwareDebuggerExtension
             prog.BeginErrorReadLine();
             prog.BeginOutputReadLine();
             prog.WaitForExit(5000);
+            if (!prog.HasExited)
+                prog.Kill();
 
             if (prog.ExitCode == 0)
             {
@@ -241,15 +251,6 @@ namespace SoftwareDebuggerExtension
             {
                 _commands.EnableUpload();
                 Alert("Error uploading the program please check the COM port", "Error");
-            }
-        }
-
-        private void UpdateProjectsSettings()
-        {
-            foreach (Project proj in _dte.Solution.Projects)
-            {
-                var pi = new ProjectInfo(proj);
-                pi.AddDefines(Settings.Instance.SolutionSettings.Options, Settings.DebuggingCaps);
             }
         }
 

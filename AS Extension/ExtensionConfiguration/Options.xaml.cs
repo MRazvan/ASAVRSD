@@ -17,6 +17,12 @@ namespace SoftwareDebuggerExtension.ExtensionConfiguration
         private List<string> SolutionOptions => Settings.Instance.SolutionSettings.Options;
         public bool SolutionSettingsEnabled => Settings.Instance.SolutionSettingsLoaded;
 
+        public bool VerboseLogging
+        {
+            get { return Settings.Instance.ExtensionSettings.VerboseLogging; }
+            set { Settings.Instance.ExtensionSettings.VerboseLogging = value; }
+        }
+
         public string ArduinoPath
         {
             get { return Settings.Instance.ExtensionSettings.ArduinoIdeLocation; }

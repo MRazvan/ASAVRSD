@@ -54,14 +54,20 @@ namespace SoftwareDebuggerExtension.SDebugger
                 case "contextSuspended":
                     if (_state == State.InDebug)
                         break;
+                    if (_server.InDebug)
+                    {
+                        _state = State.PartialEnterDebug;
+                        // We are still in debug, meaning the event came from the simulator
+                        //  we need to reset the state
+                        _suspendBarrier.Signal(_suspendBarrier.CurrentCount);
+                        break;
+                    }
                     _state = State.PartialEnterDebug;
                     _suspendBarrier.Signal();
                     break;
                 case "memoryChanged":
                     var sequence = JSON.ParseSequence(data);
-                    HandleMemoryChanged(sequence);
-                    if (_state == State.PartialEnterDebug)
-                        _state = State.InDebug;
+                    HandleMemoryChanged(sequence);                       
                     break;
             }
         }
@@ -156,9 +162,10 @@ namespace SoftwareDebuggerExtension.SDebugger
                     case State.None:
                         continue;
                 }
-                DebugWrite(MethodBase.GetCurrentMethod().Name);
-                DebugEnter?.Invoke();
+                _state = State.InDebug;
                 _updateSuspended = false;
+                DebugEnter?.Invoke();
+                DebugWrite(MethodBase.GetCurrentMethod().Name);
             }
         }
 

@@ -20,8 +20,8 @@
             <Parent guid="guidSHLMainMenu" id="IDG_VS_MM_BUILDDEBUGRUN" />
             <CommandFlag>DynamicVisibility</CommandFlag>
             <Strings>
-                <ButtonText>Software Debugger</ButtonText>
-                <CommandName>Software Debugger</CommandName>
+                <ButtonText>Debugger</ButtonText>
+                <CommandName>Debugger</CommandName>
             </Strings>
         </Menu>
                 
@@ -31,7 +31,11 @@
       <Group guid="guidSoftwareDebuggerCmdSet" id="MyMenuGroup" priority="0x0600">
         <Parent guid="guidSoftwareDebuggerCmdSet" id="TopLevelMenu" />
       </Group>
-    
+
+        <Group guid="guidSoftwareDebuggerCmdSet" id="MyMenuGroupOptions" priority="0x0700">
+            <Parent guid="guidSoftwareDebuggerCmdSet" id="TopLevelMenu" />
+        </Group>
+        
       <Group guid="guidSoftwareDebuggerCmdSet" id="MyMenuGroupToolbar" priority="0x0600">
         <Parent guid="guidSoftwareDebuggerCmdSet" id="TopLevelMenuToolbar" />
       </Group>
@@ -70,8 +74,8 @@
             </Strings>
         </Button>
 
-        <Button guid="guidSoftwareDebuggerCmdSet" id="cmdOptions" priority="0x0300" type="Button">
-            <Parent guid="guidSoftwareDebuggerCmdSet" id="MyMenuGroup" />
+        <Button guid="guidSoftwareDebuggerCmdSet" id="cmdOptions" priority="0x0100" type="Button">
+            <Parent guid="guidSoftwareDebuggerCmdSet" id="MyMenuGroupOptions" />
             <Icon guid="ImageCatalogGuid" id="Settings" />
             <CommandFlag>IconIsMoniker</CommandFlag>
             <Strings>
@@ -80,6 +84,14 @@
             </Strings>
         </Button>
 
+        <Button guid="guidSoftwareDebuggerCmdSet" id="cmdAbout" priority="0x0200" type="Button">
+            <Parent guid="guidSoftwareDebuggerCmdSet" id="MyMenuGroupOptions" />
+            <Strings>
+                <CommandName>cmdAbout</CommandName>
+                <ButtonText>About</ButtonText>
+            </Strings>
+        </Button>
+        
         <Button guid="guidSoftwareDebuggerCmdSet" id="cmdAttach" priority="0x0100" type="Button">
             <Parent guid="guidSoftwareDebuggerCmdSet" id="MyMenuGroupToolbar" />
             <Icon guid="ImageCatalogGuid" id="Link" />
@@ -158,26 +170,21 @@
     <VisibilityConstraints>
         <VisibilityItem guid="guidSoftwareDebuggerCmdSet"
               id="TopLevelMenu"
-              context="UICONTEXT_SolutionHasSingleProject" />
-        <VisibilityItem guid="guidSoftwareDebuggerCmdSet"
-              id="TopLevelMenu"
-              context="UICONTEXT_SolutionHasMultipleProjects" />
-        
+              context="UICONTEXT_SolutionExists" />
         <VisibilityItem guid="guidSoftwareDebuggerCmdSet"
               id="TopLevelMenuToolbar"
-              context="UICONTEXT_SolutionHasSingleProject" />
-        <VisibilityItem guid="guidSoftwareDebuggerCmdSet"
-              id="TopLevelMenuToolbar"
-              context="UICONTEXT_SolutionHasMultipleProjects" />
+              context="UICONTEXT_SolutionExists" />
     </VisibilityConstraints>
 
     <Symbols>
     <GuidSymbol name="guidSoftwareDebuggerPkg" value="{258c68ca-99da-4d20-ad47-55601b22a5d3}" />
     <GuidSymbol name="guidSoftwareDebuggerCmdSet" value="{7ac80e00-2e20-40be-b83d-f11bf8cc7ee8}">
         <IDSymbol name="TopLevelMenu" value="0x1000"/>
-        <IDSymbol name="MyMenuGroup" value="0x1020" />
         <IDSymbol name="TopLevelMenuToolbar" value="0x1001"/>
+        
+        <IDSymbol name="MyMenuGroup" value="0x1020" />
         <IDSymbol name="MyMenuGroupToolbar" value="0x1021" />
+        <IDSymbol name="MyMenuGroupOptions" value="0x1002"/>
         
         <IDSymbol name="cmdAttach" value="0x0100" />
         <IDSymbol name="cmdStep" value="0x0101" />
@@ -189,7 +196,8 @@
         <IDSymbol name="cmdSelectBaudList" value="0x106"/>
 
         <IDSymbol name="cmdOptions" value="0x107"/>
-
+        <IDSymbol name="cmdAbout" value="0x108"/>
+        
     </GuidSymbol> 
   </Symbols>
 

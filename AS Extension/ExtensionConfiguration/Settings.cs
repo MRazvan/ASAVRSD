@@ -156,7 +156,8 @@ namespace SoftwareDebuggerExtension.ExtensionConfiguration
 
     public class ExtensionSettings
     {
-        public string ArduinoIdeLocation { get; set; }
+        public string ArduinoIdeLocation { get; set; } = string.Empty;
+        public bool VerboseLogging { get; set; } = false;
     }
 
     public class SolutionSettings
