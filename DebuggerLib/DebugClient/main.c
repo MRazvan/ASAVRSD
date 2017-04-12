@@ -34,7 +34,6 @@ void _uart_put_ch(uint8_t data){
 }
 
 void _uart_write_str(char* str){
-	DEBUG_BRK;
 	while(*str != 0x00){
 		_uart_put_ch(*str++);
 	}
@@ -61,10 +60,12 @@ int main(void)
     {
 		count++;
 		if (count % 2 == 0){
-			_uart_put_ch(eeprom_read(0));
 			// This is here so we can test the fact that the debug server can ignore
 			//		UART traffic it does not care about
-			_uart_write_str("Hello World\n");
+			DEBUG_BRK;
+			_uart_write_str("Hello World   ");
+			_uart_put_ch(eeprom_read(0));
+			_uart_put_ch('\n');
 		}
 		do{
 			data++;

@@ -153,6 +153,8 @@ namespace SoftwareDebuggerExtension.SDebugger
         {
             DebugWrite(MethodBase.GetCurrentMethod().Name + " " + _dte.Debugger.CurrentMode +
                        $" {_debugTarget.TargetState}");
+            if (_state != State.InDebug)
+                return;
 
             MemoryError[] errRanges;
             if (memId== _debugTarget.GetMemType("data") && _server.Caps.HasFlag(DebuggerCapabilities.CAPS_RAM_W_BIT))
