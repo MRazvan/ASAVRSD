@@ -59,6 +59,11 @@ namespace SoftwareDebuggerExtension.ExtensionConfiguration
             set { UpdateSolutionCaps(value, Settings.DebuggingCapsStrings.SaveContext); }
         }
 
+        public bool IsChecked_DisableTimers
+        {
+            get { return SolutionOptions.Contains(Settings.DebuggingCapsStrings.DisableTimers); }
+            set { UpdateSolutionCaps(value, Settings.DebuggingCapsStrings.DisableTimers); }
+        }
         private void Save_Click(object sender, RoutedEventArgs e)
         {
             DialogResult = true;

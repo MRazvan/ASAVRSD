@@ -15,6 +15,7 @@ namespace Debugger.Server
         CAPS_DBG_CTX_ADDR_BIT = 1 << 7,
         CAPS_UART_HIGHSPEED_BIT = 1 << 8,
         CAPS_SAVE_CONTEXT_BIT = 1 << 9,
-        CAPS_SINGLE_STEP_BIT = 1 << 10
+        CAPS_SINGLE_STEP_BIT = 1 << 10,
+        CAPS_DISABLE_TIMERS_BIT = 1 << 11
     }
 }

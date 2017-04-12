@@ -87,6 +87,8 @@ namespace SoftwareDebuggerExtension
             foreach (Project proj in dte.Solution.Projects)
             {
                 var pi = new ProjectInfo(proj);
+                if (!pi.IsValid)
+                    return;
                 pi.AddDefines(Settings.Instance.SolutionSettings.Options, Settings.DebuggingCaps);
             }
         }

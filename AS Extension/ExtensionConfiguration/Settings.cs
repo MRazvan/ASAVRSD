@@ -20,7 +20,8 @@ namespace SoftwareDebuggerExtension.ExtensionConfiguration
             DebuggingCapsStrings.SaveContext,
             DebuggingCapsStrings.EEPROMRead,
             DebuggingCapsStrings.EEPROMWrite,
-            DebuggingCapsStrings.SingleStep
+            DebuggingCapsStrings.SingleStep,
+            DebuggingCapsStrings.DisableTimers
         };
 
         static Settings()
@@ -151,6 +152,7 @@ namespace SoftwareDebuggerExtension.ExtensionConfiguration
             public const string EEPROMRead = "CAPS_EEPROM_READ";
             public const string EEPROMWrite = "CAPS_EEPROM_WRITE";
             public const string SingleStep = "CAPS_SINGLE_STEP";
+            public const string DisableTimers = "CAPS_DISABLE_TIMERS";
         }
     }
 

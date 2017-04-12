@@ -40,6 +40,16 @@ void _uart_write_str(char* str){
 	}
 }
 
+uint8_t eeprom_read(uint16_t addr){
+	while(EECR & (1<<EEPE));
+	/* Set up address register */
+	EEAR = addr;
+	/* Start eeprom read by writing EERE */
+	EECR |= (1<<EERE);
+	/* Return data from Data Register */
+	return EEDR;
+}
+
 volatile uint16_t count = 0;
 int main(void)
 {
@@ -51,6 +61,7 @@ int main(void)
     {
 		count++;
 		if (count % 2 == 0){
+			_uart_put_ch(eeprom_read(0));
 			// This is here so we can test the fact that the debug server can ignore
 			//		UART traffic it does not care about
 			_uart_write_str("Hello World\n");

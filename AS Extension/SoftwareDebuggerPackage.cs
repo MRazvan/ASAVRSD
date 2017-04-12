@@ -27,7 +27,7 @@ namespace SoftwareDebuggerExtension
     /// </summary>
     // This attribute tells the PkgDef creation utility (CreatePkgDef.exe) that this class is
     // a package.
-    [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionExistsAndFullyLoaded_string)]
+    [ProvideAutoLoad(VSConstants.UICONTEXT.SolutionExists_string)]
     [PackageRegistration(UseManagedResourcesOnly = true)]
     // This attribute is used to register the informations needed to show the this package
     // in the Help/About dialog of Visual Studio.
@@ -149,7 +149,7 @@ namespace SoftwareDebuggerExtension
             }
 
             pi = new ProjectInfo(proj);
-            if (string.IsNullOrWhiteSpace(pi.OutputPath))
+            if (string.IsNullOrWhiteSpace(pi.OutputPathHex))
             {
                 Alert("The active project has no output path", "Error");
                 return false;
@@ -219,18 +219,41 @@ namespace SoftwareDebuggerExtension
             _dte.Events.BuildEvents.OnBuildDone -= BuildEventsOnOnBuildDone;
             var pi = new ProjectInfo(_dte.ActiveSolutionProjects[0] as Project);
 
-            _output.Activate(Output.SDDebugOutputPane);
+            // Display information about the program
+            //var process = new Process();
+            //process.StartInfo = new ProcessStartInfo
+            //{
+            //    FileName = $"{Path.Combine(pi.ToolchainPackageManager.DefaultPackage.BasePath, "avr-nm.exe")}",
+            //    CreateNoWindow = true,
+            //    WindowStyle = ProcessWindowStyle.Hidden,
+            //    UseShellExecute = false,
+            //    RedirectStandardError = true,
+            //    RedirectStandardOutput = true,
+            //    Arguments = $" -S -f bsd --size-sort  \"{pi.OutputPathElf}\""
+            //};
+
+            //process.EnableRaisingEvents = true;
+            //process.OutputDataReceived += (sender, e) => _output.DebugOutLine(e.Data);
+            //process.ErrorDataReceived += (sender, e) => _output.DebugOutLine(e.Data);
+            //process.Start();
+            //process.BeginErrorReadLine();
+            //process.BeginOutputReadLine();
+            //process.WaitForExit(5000);
+            //if (!process.HasExited)
+            //    process.Kill();
+
             // Upload the program
             var prog = new Process();
             prog.StartInfo = new ProcessStartInfo
             {
                 FileName = $"{Settings.AvrDudeFullPath}",
+                WindowStyle = ProcessWindowStyle.Hidden,
                 CreateNoWindow = true,
                 UseShellExecute = false,
                 RedirectStandardError = true,
                 RedirectStandardOutput = true,
                 Arguments =
-                    $"\"-C{Settings.AvrDudeConfigFullPath}\" -v -p{pi.Device?.Name.ToLower()} -carduino -P{_commands.Port} -b57600 -D -Uflash:w:\"{pi.OutputPath}\":i"
+                    $"\"-C{Settings.AvrDudeConfigFullPath}\" -v -p{pi.Device?.Name.ToLower()} -carduino -P{_commands.Port} -b57600 -D -Uflash:w:\"{pi.OutputPathHex}\":i"
             };
             prog.EnableRaisingEvents = true;
             prog.OutputDataReceived += (sender, e) => _output.DebugOutLine(e.Data);
@@ -256,6 +279,7 @@ namespace SoftwareDebuggerExtension
 
         private void EventsService_DebugActionChanged(object sender, DebugEventArgs e)
         {
+            _output.Activate(Output.SDDebugOutputPane);
             _output.DebugOutLine(e.DebugAction.ToString());
             if (e.DebugAction == DebugAction.Launched)
             {

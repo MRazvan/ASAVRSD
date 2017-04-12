@@ -103,15 +103,6 @@
 	#define _BV(v) (1 << (v))
 #endif
 
-#ifdef CAPS_DISABLE_TIMERS
-	#define CAPS_FLAG_DISABLE_TIMERS _BV(CAPS_DISABLE_TIMERS_BIT)
-	#ifndef CAPS_SAVE_POWER_REG
-		#define CAPS_SAVE_POWER_REG
-	#endif
-#else
-	#define CAPS_FLAG_DISABLE_TIMERS 0
-#endif
-
 #ifdef CAPS_SINGLE_STEP
 	#define CAPS_FLAG_SINGLE_STEP _BV(CAPS_SINGLE_STEP_BIT)
 	#ifndef CAPS_SAVE_CTX
@@ -185,7 +176,7 @@
 //////////////////////////////////////////////////////////////////////////
 //	The debug capabilities we have
 #define CAPS_0	_BV(CAPS_RAM_R_BIT) | CAPS_FLAG_RAM_WRITE | CAPS_FLAG_FLASH_READ | CAPS_FLAG_FLASH_WRITE | CAPS_FLAG_EEPROM_READ | CAPS_FLAG_EEPROM_WRITE | CAPS_FLAG_EXECUTE | CAPS_FLAG_DBG_CTX_ADDR
-#define CAPS_1	CAPS_FLAG_UART_HIGH_SPEED | CAPS_FLAG_SAVE_CTX | CAPS_FLAG_SINGLE_STEP | CAPS_FLAG_DISABLE_TIMERS
+#define CAPS_1	CAPS_FLAG_UART_HIGH_SPEED | CAPS_FLAG_SAVE_CTX | CAPS_FLAG_SINGLE_STEP
 
 #define DBG_FLAG_EXECUTING			0
 #define DBG_FLAG_UART_HIGH_SPEED	1
@@ -245,12 +236,6 @@ typedef struct {
 } t_state_ctx;
 #endif
 
-#ifdef CAPS_SAVE_POWER_REG
-typedef struct {
-	uint8_t prr;
-} t_power_regs;
-#endif
-
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -280,9 +265,6 @@ typedef struct {
 #if defined(CAPS_EXECUTE) || defined(CAPS_UART_HIGH_SPEED) || defined(CAPS_SINGLE_STEP)
 	uint8_t ctx_state;
 #endif
-#ifdef CAPS_SAVE_POWER_REG
-	t_power_regs power_regs;
-#endif
 	t_mem_op_8 mem_op;
 	uint8_t tmp_u8;
 	uint8_t status_reg;
@@ -296,19 +278,6 @@ typedef struct {
 t_dbg_context dbg_context;
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
-
-#include <avr/power.h>
-
-#ifdef CAPS_DISABLE_TIMERS
-void dbg_disable_timers(){
-	dbg_context.power_regs.prr = PRR;
-	PRR &= ~(_BV(PRTIM0) | _BV(PRTIM1) | _BV(PRTIM2));
-}
-
-void dbg_enable_timers(){
-	PRR = dbg_context.power_regs.prr;
-}
-#endif
 
 #ifdef CAPS_SINGLE_STEP
 INLINE
@@ -490,11 +459,6 @@ void dbg_restore_eeprom(){
 INLINE
 ATTRIBUTES
 void dbg_enter_debug(){
-
-#ifdef CAPS_DISABLE_TIMERS
-	dbg_disable_timers();
-#endif
-
 #ifndef CAPS_SAVE_CTX
 	// Disable interrupts, we don't need / want any
 	dbg_context.status_reg = SREG;
@@ -509,11 +473,6 @@ void dbg_enter_debug(){
 INLINE
 ATTRIBUTES
 void dbg_leave_debug(){
-
-#ifdef CAPS_DISABLE_TIMERS
-	dbg_enable_timers();
-#endif
-
 #ifdef CAPS_SAVE_CTX
 	//	Context switch again
 	dbg_restore_registers();

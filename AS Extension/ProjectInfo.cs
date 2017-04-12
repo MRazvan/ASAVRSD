@@ -5,6 +5,7 @@ using Atmel.Studio.Extensibility.Toolchain;
 using Atmel.Studio.Framework;
 using Atmel.Studio.Services;
 using Atmel.Studio.Services.Device;
+using Atmel.VsIde.AvrStudio.Project.Management;
 using EnvDTE;
 
 namespace SoftwareDebuggerExtension
@@ -13,8 +14,13 @@ namespace SoftwareDebuggerExtension
     {
         public ProjectInfo(Project proj)
         {
+            IsValid = false;
             Project = proj;
             ProjectHandle = proj.Object as IProjectHandle;
+            if (ProjectHandle == null)
+                return;
+            AvrNode = proj.Object as AvrProjectNode;
+            Toolchain = AvrNode?.GetCurrentToolchain();
             Device = ATServiceProvider.DeviceService.GetDeviceFromName(ProjectHandle?.DeviceName);
             ToolName = proj.Properties.OfType<Property>().FirstOrDefault(p => p.Name == "ToolName")?.Value;
             var configurationManager = proj.ConfigurationManager;
@@ -25,30 +31,40 @@ namespace SoftwareDebuggerExtension
                     activeConfiguration.Properties.OfType<Property>().FirstOrDefault(prop => prop.Name == "OutputType");
                 IsExecutable = outputType?.Value == "Executable";
 
-                var outputFile =
-                    activeConfiguration.Properties.OfType<Property>().FirstOrDefault(prop => prop.Name == "OutputFile");
-                if (outputFile != null)
+                if (IsExecutable)
                 {
-                    var outputDir =
-                        activeConfiguration.Properties.OfType<Property>()
-                            .FirstOrDefault(prop => prop.Name == "OutputDirectory");
-                    if (outputDir != null)
-                        OutputPath = Path.Combine(outputDir.Value,
-                            $"{Path.GetFileNameWithoutExtension(outputFile.Value)}.hex");
+                    var outputFile = activeConfiguration.Properties.OfType<Property>().FirstOrDefault(prop => prop.Name == "OutputFile");
+                    if (outputFile != null)
+                    {
+                        var outputDir = activeConfiguration.Properties.OfType<Property>().FirstOrDefault(prop => prop.Name == "OutputDirectory");
+                        if (outputDir != null)
+                        {
+                            OutputPathHex = Path.Combine(outputDir.Value, $"{Path.GetFileNameWithoutExtension(outputFile.Value)}.hex");
+                            OutputPathElf = Path.Combine(outputDir.Value, $"{Path.GetFileNameWithoutExtension(outputFile.Value)}.elf");
+                        }
+                    }
                 }
             }
             var toolchain = proj.Properties.OfType<Property>().FirstOrDefault(prop => prop.Name == "ToolchainOptions");
             if (toolchain != null)
                 ToolchainOptions = toolchain.Value as ProjectToolchainOptions;
+            ToolchainPackageManager = ATServiceProvider.ToolchainService.GetPackagesManager(Toolchain?.Info.Name);
+            IsValid = true;
         }
 
+        public bool IsValid { get; set; }
+
         public bool IsExecutable { get; }
-        public string OutputPath { get; private set; } = string.Empty;
+        public string OutputPathHex { get; private set; } = string.Empty;
+        public string OutputPathElf { get; private set; } = string.Empty;
         public IProjectHandle ProjectHandle { get; }
         public ProjectToolchainOptions ToolchainOptions { get; }
         public IDevice Device { get; set; }
         public Project Project { get; set; }
         public string ToolName { get; set; }
+        public AvrProjectNode AvrNode { get; set; }
+        public IToolchain Toolchain { get; set; }
+        public IToolchainPackagesManager ToolchainPackageManager { get; set; }
 
         public bool CanDebug()
         {

@@ -65,6 +65,5 @@
 	#define CAPS_UART_HIGHSPEED_BIT		0
 	#define CAPS_SAVE_CONTEXT_BIT		1
 	#define CAPS_SINGLE_STEP_BIT		2
-	#define CAPS_DISABLE_TIMERS_BIT		3
 
 #endif /* DEBUG_DEFS_H_ */

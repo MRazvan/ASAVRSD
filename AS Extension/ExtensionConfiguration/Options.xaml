@@ -4,7 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
-        Title="Software Debugger Options" MinHeight="550" Height="550" MinWidth="500" Width="500">
+        Title="Software Debugger Options" MinHeight="600" Height="600" MinWidth="500" Width="500">
     <Window.Resources>
         <LinearGradientBrush x:Key="CheckedOrange" StartPoint="0,0" EndPoint="0,1">
             <GradientStop Color="#FFCA6A13" Offset="0" />
@@ -178,6 +178,7 @@
                                 <RowDefinition Height="auto" SharedSizeGroup="checkboxRow" />
                                 <RowDefinition Height="auto" SharedSizeGroup="checkboxRow" />
                                 <RowDefinition Height="auto" SharedSizeGroup="checkboxRow" />
+                                <RowDefinition Height="auto" SharedSizeGroup="checkboxRow" />                                
                             </Grid.RowDefinitions>
                             <CheckBox Grid.Row="0" Grid.Column="0" Style="{DynamicResource SwitchStyle}" x:Name="writeRam"
                                         IsChecked="{Binding IsChecked_WriteRam}" />
@@ -199,21 +200,28 @@
                                 <Label Style="{DynamicResource Header}">Single Step</Label>
                                 <TextBlock Style="{DynamicResource Info}">Enable single stepping through code (One instruction at a time)</TextBlock>
                             </StackPanel>
-
-                            <CheckBox Grid.Row="3" Grid.Column="0" Style="{DynamicResource SwitchStyle}" x:Name="eepromRead"
-                                        IsChecked="{Binding IsChecked_EEPROM_Read}"/>
+                            <CheckBox Grid.Row="3" Grid.Column="0" Style="{DynamicResource SwitchStyle}" 
+                                        IsChecked="{Binding IsChecked_DisableTimers}"/>
                             <StackPanel Grid.Row="3" Grid.Column="1">
+                                <Label Style="{DynamicResource Header}">Disable Timers</Label>
+                                <TextBlock Style="{DynamicResource Info}">Disable timers while we are in debug</TextBlock>
+                            </StackPanel>
+                            
+                            <CheckBox Grid.Row="4" Grid.Column="0" Style="{DynamicResource SwitchStyle}" x:Name="eepromRead"
+                                        IsChecked="{Binding IsChecked_EEPROM_Read}"
+                                        IsEnabled="False"/>
+                            <StackPanel Grid.Row="4" Grid.Column="1">
                                 <Label Style="{DynamicResource Header}">EEPROM Read</Label>
                                 <TextBlock Style="{DynamicResource Info}">Enable reading the EEPROM values in cases where the MCU has eeprom</TextBlock>
                             </StackPanel>
 
-                            <CheckBox Grid.Row="4" Grid.Column="0" Style="{DynamicResource SwitchStyle}" x:Name="eepromWrite"
-                                        IsChecked="{Binding IsChecked_EEPROM_Write}"/>
-                            <StackPanel Grid.Row="4" Grid.Column="1">
+                            <CheckBox Grid.Row="5" Grid.Column="0" Style="{DynamicResource SwitchStyle}" x:Name="eepromWrite"
+                                        IsChecked="{Binding IsChecked_EEPROM_Write}"
+                                        IsEnabled="False"/>
+                            <StackPanel Grid.Row="5" Grid.Column="1">
                                 <Label Style="{DynamicResource Header}">EEPROM Write</Label>
                                 <TextBlock Style="{DynamicResource Info}">Enable writing the EEPROM values in cases where the MCU has eeprom</TextBlock>
                             </StackPanel>
-
                         </Grid>
                     </ScrollViewer>
                 </GroupBox>

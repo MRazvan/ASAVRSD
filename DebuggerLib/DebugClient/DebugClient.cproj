@@ -66,6 +66,21 @@
       <ToolNumber>ATML2323040200018641</ToolNumber>
       <ToolName>mEDBG</ToolName>
     </com_atmel_avrdbg_tool_medbg>
+    <AAFDebugger>
+      <AAFDebugFiles>
+        <DebugFile>
+          <path>\Debug\DebugClient.lss</path>
+          <AAFSetting>
+            <Label>Lss Files</Label>
+            <Extention>.lss</Extention>
+            <Regex>^\s*(?&lt;address&gt;[a-f0-9]*):\s*.*$</Regex>
+            <DebugEnabled>true</DebugEnabled>
+            <RegexGroups>address</RegexGroups>
+            <DebuggerExpression>$pc</DebuggerExpression>
+          </AAFSetting>
+        </DebugFile>
+      </AAFDebugFiles>
+    </AAFDebugger>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <ToolchainSettings>
@@ -122,8 +137,7 @@
   <avrgcc.compiler.symbols.DefSymbols>
     <ListValues>
       <Value>DEBUG</Value>
-      <Value>CAPS_EEPROM_READ</Value>
-      <Value>CAPS_EEPROM_WRITE</Value>
+      <Value>CAPS_DISABLE_TIMERS</Value>
       <Value>CAPS_RAM_WRITE</Value>
       <Value>CAPS_SAVE_CTX</Value>
       <Value>CAPS_SINGLE_STEP</Value>

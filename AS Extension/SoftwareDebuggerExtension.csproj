@@ -71,6 +71,9 @@
     <Reference Include="Atmel.Studio.Toolchain.Interfaces">
       <HintPath>C:\Program Files (x86)\Atmel\Atmel Studio 7.0 SDK\assemblies\Atmel.Studio.Toolchain.Interfaces.dll</HintPath>
     </Reference>
+    <Reference Include="AvrProjectManagement">
+      <HintPath>C:\Program Files (x86)\Atmel\Studio\7.0\Extensions\Application\AvrProjectManagement.dll</HintPath>
+    </Reference>
     <Reference Include="envdte, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <EmbedInteropTypes>True</EmbedInteropTypes>
     </Reference>
@@ -226,6 +229,15 @@
     </VSCTCompile>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="debug_lib\debug.c">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="debug_lib\debug.h">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="debug_lib\debug_defs.h">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="Resources\Package.ico" />
     <EmbeddedResource Include="About\version.html" />
   </ItemGroup>
