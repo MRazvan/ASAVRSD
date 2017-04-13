@@ -1,9 +1,13 @@
 /*
- * debug.c
+ * debug.h
  *
- * Created: 2/27/2017 10:38:47 AM
+ * Created: 2/27/2017 10:38:31 AM
  *  Author: razvanm
  */ 
+
+
+#ifndef DEBUG_H_
+#define DEBUG_H_
 
 #include <stdint.h>
 #include <avr/io.h>
@@ -12,10 +16,42 @@
 #include <avr/pgmspace.h>
 
 #include "debug_defs.h"
-#include "debug.h"
+
+#define DEBUG_PROTOCOL_VERSION		0x01
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+// This should be used to call the debug function
+//	It will force the compiler to place the PC on stack and not optimize the call
+//	otherwise we could be in a situation where we are breaking in method_a, yet the compiler
+//	has optimized the stack to return directly to the calling method
+
+//	Normal stack
+//	PC - Parent
+//	PC - method_a
+//	Debug method 
+
+//	Optimized stack - we can't tell we were called from method_a
+//	PC - Parent - method_a - optimized away
+//	Debug method - return directly to parent
+#ifdef DEBUG
+	#define DEBUG_BRK	asm volatile ("call dbg_brk");
+#else
+	#define DEBUG_BRK
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+
+#ifndef EEWE
+	#define EEWE (1)
+#endif
 
 #define	AVR8_SWINT_PIN		(PORTD2)
 #define AVR8_SWINT_INTMASK	(INT0)
+#define AVR8_INT_SOURCE		INT0_vect
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
@@ -25,7 +61,7 @@
 //	- 16 Bit pointers
 //	- At most 64k flash
 //  ---------------
-//	- Basically an ATmega328P
+//	- Basically an ATmega328
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
@@ -297,23 +333,31 @@ t_dbg_context dbg_context;
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
 
-#include <avr/power.h>
+#ifdef CAPS_SAVE_POWER_REG
+INLINE
+ATTRIBUTES
+void dbg_save_power_reg(){
+	dbg_context.power_regs.prr = PRR;
+}
+INLINE
+ATTRIBUTES
+void dbg_restore_power_reg(){
+	PRR = dbg_context.power_regs.prr;
+}
+#endif
 
 #ifdef CAPS_DISABLE_TIMERS
+INLINE
+ATTRIBUTES
 void dbg_disable_timers(){
-	dbg_context.power_regs.prr = PRR;
 	PRR &= ~(_BV(PRTIM0) | _BV(PRTIM1) | _BV(PRTIM2));
-}
-
-void dbg_enable_timers(){
-	PRR = dbg_context.power_regs.prr;
 }
 #endif
 
 #ifdef CAPS_SINGLE_STEP
 INLINE
 ATTRIBUTES
-void enable_single_step(){
+void dbg_enable_single_step(){
 	EICRA &= ~(_BV(ISC01) | _BV(ISC00));
 	DDRD |= _BV(AVR8_SWINT_PIN);		/* set pin to output mode */
 	EIFR |= _BV(AVR8_SWINT_INTMASK);	/* clear INTx flag */
@@ -323,7 +367,7 @@ void enable_single_step(){
 
 INLINE
 ATTRIBUTES
-void disable_single_step(){
+void dbg_disable_single_step(){
 	EIMSK &= ~_BV(AVR8_SWINT_INTMASK);
 }
 #endif
@@ -440,7 +484,7 @@ INLINE
 ATTRIBUTES
 uint8_t dbg_eeprom_read(uint16_t addr){
 	/* Wait for completion of previous write */
-	while(EECR & (1<<EEPE));
+	while(EECR & (1<<EEWE));
 	/* Set up address register */
 	EEAR = addr;
 	/* Start eeprom read by writing EERE */
@@ -455,44 +499,24 @@ INLINE
 ATTRIBUTES
 void dbg_eeprom_write(uint16_t addr, uint8_t data){
 	/* Wait for completion of previous write */
-	while(EECR & (1<<EEPE));
+	while(EECR & (1<<EEWE));
 	/* Set up address and Data Registers */
 	EEAR = addr;
 	EEDR = data;
 	/* Write logical one to EEMPE */
 	EECR |= (1<<EEMPE);
-	/* Start eeprom write by setting EEPE */
-	EECR |= (1<<EEPE);
+	/* Start eeprom write by setting EEWE */
+	EECR |= (1<<EEWE);
 }
 #endif
-
-INLINE
-ATTRIBUTES
-void dbg_save_eeprom(){
-	while(EECR & (1<<EEPE));
-	dbg_context.eeprom_regs.eear = EEAR;
-	#ifdef CAPS_EEPROM_WRITE
-		dbg_context.eeprom_regs.eedr = EEDR;
-	#endif
-}
-
-INLINE
-ATTRIBUTES
-void dbg_restore_eeprom(){
-	while(EECR & (1<<EEPE));
-	EEAR = dbg_context.eeprom_regs.eear;
-	#ifdef CAPS_EEPROM_WRITE
-		EEDR = dbg_context.eeprom_regs.eedr;
-	#endif
-}
 #endif
 
 INLINE
 ATTRIBUTES
 void dbg_enter_debug(){
 
-#ifdef CAPS_DISABLE_TIMERS
-	dbg_disable_timers();
+#ifdef CAPS_SAVE_POWER_REG
+	dbg_save_power_reg();
 #endif
 
 #ifndef CAPS_SAVE_CTX
@@ -510,8 +534,8 @@ INLINE
 ATTRIBUTES
 void dbg_leave_debug(){
 
-#ifdef CAPS_DISABLE_TIMERS
-	dbg_enable_timers();
+#ifdef CAPS_SAVE_POWER_REG
+	dbg_restore_power_reg();
 #endif
 
 #ifdef CAPS_SAVE_CTX
@@ -582,6 +606,10 @@ void dbg_brk() {
 
 	dbg_enter_debug();
 
+#ifdef CAPS_DISABLE_TIMERS
+	dbg_disable_timers();
+#endif
+
 #ifdef CAPS_EXECUTE
 	if (dbg_context.ctx_state & _BV(DBG_FLAG_EXECUTING)){
 		dbg_leave_debug();
@@ -593,19 +621,13 @@ void dbg_brk() {
 #ifdef CAPS_SINGLE_STEP
 if (dbg_context.ctx_state & _BV(DBG_SINGLE_STEP_ISR)){
 	dbg_context.ctx_state &= ~_BV(DBG_SINGLE_STEP_ISR);
-	disable_single_step();
+	dbg_disable_single_step();
 }
 #endif
 
 //////////////////////////////////////////////////////////////////////////
 // Disable the Watchdog
 	dbg_disable_watchdog();
-
-//////////////////////////////////////////////////////////////////////////
-// SAVE EEPROM REGISTERS
-#if defined(CAPS_EEPROM_WRITE) | defined(CAPS_EEPROM_READ)
-	dbg_save_eeprom();
-#endif
 
 //////////////////////////////////////////////////////////////////////////
 // Notify we reached a debug point
@@ -684,14 +706,12 @@ if (dbg_context.ctx_state & _BV(DBG_SINGLE_STEP_ISR)){
 	#ifdef CAPS_EEPROM_WRITE
 		else if (dbg_context.tmp_u8 == DEBUG_REQ_WRITE_EEPROM){
 			dbg_read_mem_op();
-			while(dbg_context.mem_op.size.d16--){
-				dbg_eeprom_write(dbg_context.mem_op.buff.addr++, dbg_get_ch());
-			}
+			dbg_eeprom_write(dbg_context.mem_op.buff.addr, dbg_get_ch());
 		}
 	#endif
 	#ifdef CAPS_SINGLE_STEP
 		else if (dbg_context.tmp_u8 == DEBUG_REQ_SINGLE_STEP){
-			enable_single_step();
+			dbg_enable_single_step();
 			dbg_context.ctx_state |= _BV(DBG_WILL_SINGLE_STEP);
 			// Exit the read loop and return to caller
 			break;
@@ -714,12 +734,6 @@ if (dbg_context.ctx_state & _BV(DBG_SINGLE_STEP_ISR)){
 		dbg_restore_uart_state();
 		dbg_context.ctx_state &= ~_BV(DBG_FLAG_UART_HIGH_SPEED);
 	}
-#endif
-
-//////////////////////////////////////////////////////////////////////////
-// RESTORE EEPROM REGISTERS
-#if defined(CAPS_EEPROM_WRITE) | defined(CAPS_EEPROM_READ)
-	dbg_restore_eeprom();
 #endif
 
 #ifdef CAPS_EXECUTE
@@ -758,12 +772,15 @@ if (dbg_context.ctx_state & _BV(DBG_SINGLE_STEP_ISR)){
 }
 
 #ifdef CAPS_SINGLE_STEP
-	ISR ( INT0_vect, ISR_BLOCK ISR_NAKED ){
+	ISR ( AVR8_INT_SOURCE, ISR_BLOCK ISR_NAKED ){
 		asm volatile ("jmp dbg_brk");
 	}
 #endif
 
+// Used for interrupt handling, instead of a reset we can enter debug and see what happened
 //__attribute__((used, naked))
 //void __vector_default(){
 	//dbg_brk();
 //}
+
+#endif /* DEBUG_H_ */

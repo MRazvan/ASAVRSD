@@ -9,7 +9,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
-#include "Debugger/debug.h"
+#include "debug.h"
 
 #define BAUD_PRESCALLER 1
 volatile uint16_t data = 0;

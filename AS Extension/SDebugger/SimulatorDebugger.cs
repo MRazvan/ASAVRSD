@@ -214,7 +214,6 @@ namespace SoftwareDebuggerExtension.SDebugger
             }), DispatcherPriority.Background, Array.Empty<object>());
             // Set the pc location for the simulator
         }
-
         protected byte[] WaitForCommand(IDebugCommand command)
         {
             var task = _server.AddCommand(command);

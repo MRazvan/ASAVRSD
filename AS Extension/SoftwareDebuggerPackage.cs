@@ -1,11 +1,13 @@
 ﻿using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows;
 using Atmel.Studio.Services;
 using Debugger.Server.Transports;
 using EnvDTE;
+using ICSharpCode.SharpZipLib.Zip;
 using Microsoft.VisualStudio;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
