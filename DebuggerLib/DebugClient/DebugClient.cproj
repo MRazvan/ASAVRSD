@@ -137,6 +137,9 @@
   <avrgcc.compiler.symbols.DefSymbols>
     <ListValues>
       <Value>DEBUG</Value>
+      <Value>CAPS_RAM_WRITE</Value>
+      <Value>CAPS_SAVE_CTX</Value>
+      <Value>CAPS_SINGLE_STEP</Value>
     </ListValues>
   </avrgcc.compiler.symbols.DefSymbols>
   <avrgcc.compiler.directories.IncludePaths>

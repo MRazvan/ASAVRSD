@@ -64,6 +64,7 @@ int main(void)
 			//		UART traffic it does not care about
 			DEBUG_BRK;
 			_uart_write_str("Hello World   ");
+			_uart_write_str("Test debugging   ");
 			_uart_put_ch(eeprom_read(0));
 			_uart_put_ch('\n');
 		}

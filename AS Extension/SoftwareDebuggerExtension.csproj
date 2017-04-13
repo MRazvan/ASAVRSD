@@ -220,7 +220,6 @@
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
-    <EmbeddedResource Include="Resources\debug_lib.zip" />
     <None Include="source.extension.vsixmanifest">
       <SubType>Designer</SubType>
     </None>
