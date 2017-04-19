@@ -1,4 +1,4 @@
-﻿using System;
+﻿using ScintillaNET;
 using System.Drawing;
 using System.IO;
 using WeifenLuo.WinFormsUI.Docking;
@@ -62,16 +62,16 @@ namespace AVR.Debugger
         private void InitScintilla()
         {
             _textControl.IndentationGuides = IndentView.LookBoth;
-            _textControl.SetSelectionBackColor(true, IntToColor(0x114D9C));
+            _textControl.SetSelectionBackColor(true, Utils.IntToColor(0x114D9C));
             _textControl.ClearAllCmdKeys();
             _textControl.StyleResetDefault();
             _textControl.Styles[Style.Default].Font = "Consolas";
             _textControl.Styles[Style.Default].Size = 10;
-            _textControl.Styles[Style.Default].BackColor = IntToColor(0x212121);
-            _textControl.Styles[Style.Default].ForeColor = IntToColor(0xFFFFFF);
+            _textControl.Styles[Style.Default].BackColor = Utils.IntToColor(0x212121);
+            _textControl.Styles[Style.Default].ForeColor = Utils.IntToColor(0xFFFFFF);
             _textControl.StyleClearAll();
             _textControl.Markers[1].Symbol = MarkerSymbol.Background;
-            _textControl.Markers[1].SetBackColor(IntToColor(0xAB616B));
+            _textControl.Markers[1].SetBackColor(Utils.IntToColor(0xAB616B));
             //_textControl.Styles[Style.Asm.Identifier].ForeColor = IntToColor(0xD0DAE2);
             _textControl.Styles[Style.Cpp.Default].ForeColor = Color.Silver;
             _textControl.Styles[Style.Cpp.Comment].ForeColor = Color.FromArgb(0, 128, 0); // Green
@@ -87,10 +87,10 @@ namespace AVR.Debugger
             _textControl.Styles[Style.Cpp.Preprocessor].ForeColor = Color.DarkGray;
             _textControl.Lexer = Lexer.Cpp;
 
-            _textControl.Styles[Style.LineNumber].BackColor = IntToColor(BACK_COLOR);
-            _textControl.Styles[Style.LineNumber].ForeColor = IntToColor(FORE_COLOR);
-            _textControl.Styles[Style.IndentGuide].ForeColor = IntToColor(FORE_COLOR);
-            _textControl.Styles[Style.IndentGuide].BackColor = IntToColor(BACK_COLOR);
+            _textControl.Styles[Style.LineNumber].BackColor = Utils.IntToColor(BACK_COLOR);
+            _textControl.Styles[Style.LineNumber].ForeColor = Utils.IntToColor(FORE_COLOR);
+            _textControl.Styles[Style.IndentGuide].ForeColor = Utils.IntToColor(FORE_COLOR);
+            _textControl.Styles[Style.IndentGuide].BackColor = Utils.IntToColor(BACK_COLOR);
 
             var nums = _textControl.Margins[NUMBER_MARGIN];
             nums.Width = 40;
@@ -118,11 +118,6 @@ namespace AVR.Debugger
             _textControl.MarkerDeleteAll(1);
             _textControl.Lines[line].MarkerAdd(1);
             _textControl.Lines[line].EnsureVisible();
-        }
-
-        private static Color IntToColor(int rgb)
-        {
-            return Color.FromArgb(255, (byte)(rgb >> 16), (byte)(rgb >> 8), (byte)rgb);
         }
 
         public void ClearMakers()

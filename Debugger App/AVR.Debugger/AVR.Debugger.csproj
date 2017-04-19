@@ -39,7 +39,7 @@
       <HintPath>D:\GIT\ASAVRSD\Debugger.Server\bin\Debug\Debugger.Server.dll</HintPath>
     </Reference>
     <Reference Include="ScintillaNET">
-      <HintPath>.\ScintillaNET.dll</HintPath>
+      <HintPath>..\libs\ScintillaNET.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -52,25 +52,26 @@
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="WeifenLuo.WinFormsUI.Docking">
-      <HintPath>..\..\..\Downloads\DockPanel_2.4_Bin\WeifenLuo.WinFormsUI.Docking.dll</HintPath>
+      <HintPath>..\libs\WeifenLuo.WinFormsUI.Docking.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AvrAddrToLine.cs" />
-    <Compile Include="AvrDisassembler.cs" />
-    <Compile Include="AvrNm.cs" />
-    <Compile Include="CPUInfoView.cs">
+    <Compile Include="Tools\AvrAddrToLine.cs" />
+    <Compile Include="Tools\AvrDisassembler.cs" />
+    <Compile Include="Tools\AvrNm.cs" />
+    <Compile Include="Utils.cs" />
+    <Compile Include="Views\CPUInfoView.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="CpuState.cs" />
+    <Compile Include="Models\CpuState.cs" />
     <Compile Include="DebuggerWrapper.cs" />
-    <Compile Include="DisassemblyView.cs">
+    <Compile Include="Views\DisassemblyView.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="IDebuggerWrapper.cs" />
-    <Compile Include="IDocumentHost.cs" />
-    <Compile Include="ISourceCodeView.cs" />
-    <Compile Include="LineInfo.cs" />
+    <Compile Include="Interfaces\IDebuggerWrapper.cs" />
+    <Compile Include="Interfaces\IDocumentHost.cs" />
+    <Compile Include="Interfaces\ISourceCodeView.cs" />
+    <Compile Include="Models\LineInfo.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -79,14 +80,14 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SerialOutView.cs">
+    <Compile Include="Views\SerialOutView.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="SourceCodeView.cs">
+    <Compile Include="Views\SourceCodeView.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Symbol.cs" />
-    <Compile Include="SymbolSection.cs" />
+    <Compile Include="Models\Symbol.cs" />
+    <Compile Include="Models\SymbolSection.cs" />
     <Compile Include="ToolUtils.cs" />
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>

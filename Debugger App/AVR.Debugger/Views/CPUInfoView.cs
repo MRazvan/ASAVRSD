@@ -1,4 +1,4 @@
-﻿using System.Drawing;
+﻿using ScintillaNET;
 using System.Text;
 using WeifenLuo.WinFormsUI.Docking;
 
@@ -23,7 +23,7 @@ namespace AVR.Debugger
         /// </summary>
         private const int NUMBER_MARGIN = 1;
 
-        public CPUInfoView(DockPanel panel)
+        public CPUInfoView()
         {
             this.Text = "Cpu Info";
             _textControl = new Scintilla();
@@ -33,24 +33,18 @@ namespace AVR.Debugger
             _textControl.ReadOnly = true;
             this.Controls.Add(_textControl);
             this.CloseButtonVisible = false;
-            if (panel.DocumentStyle == DocumentStyle.SystemMdi)
-            {
-                this.MdiParent = this;
-                this.Show();
-            }
-            else this.Show(panel);
         }
 
         private void InitScintilla()
         {
             _textControl.IndentationGuides = IndentView.LookBoth;
-            _textControl.SetSelectionBackColor(true, IntToColor(0x114D9C));
+            _textControl.SetSelectionBackColor(true, Utils.IntToColor(0x114D9C));
             _textControl.ClearAllCmdKeys();
             _textControl.StyleResetDefault();
             _textControl.Styles[Style.Default].Font = "Consolas";
             _textControl.Styles[Style.Default].Size = 10;
-            _textControl.Styles[Style.Default].BackColor = IntToColor(0x212121);
-            _textControl.Styles[Style.Default].ForeColor = IntToColor(0xFFFFFF);
+            _textControl.Styles[Style.Default].BackColor = Utils.IntToColor(0x212121);
+            _textControl.Styles[Style.Default].ForeColor = Utils.IntToColor(0xFFFFFF);
             _textControl.StyleClearAll();
             _textControl.Lexer = Lexer.Null;
             _textControl.Zoom = 2;
@@ -72,11 +66,6 @@ namespace AVR.Debugger
             _textControl.ReadOnly = false;
             _textControl.Text = sb.ToString();
             _textControl.ReadOnly = true;
-        }
-
-        private static Color IntToColor(int rgb)
-        {
-            return Color.FromArgb(255, (byte)(rgb >> 16), (byte)(rgb >> 8), (byte)rgb);
         }
     }
 }

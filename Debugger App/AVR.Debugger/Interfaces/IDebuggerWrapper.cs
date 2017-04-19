@@ -11,6 +11,7 @@ namespace AVR.Debugger
         Started,
         BeforeDebugEnter,
         DebugEnter,
+        AfterDebugEnter,
         DebugLeave,
         Stopping,
         Stopped

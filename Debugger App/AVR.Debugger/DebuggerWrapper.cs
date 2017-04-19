@@ -5,6 +5,9 @@ using System.IO;
 using System.Linq;
 using System;
 using Debugger.Server.Commands;
+using System.ComponentModel;
+using System.Diagnostics;
+using System.Reflection;
 
 namespace AVR.Debugger
 {
@@ -17,6 +20,8 @@ namespace AVR.Debugger
         private Dictionary<Events, List<Action>> _eventHandlers;
         private List<Action<byte>> _unknownDataHandlers;
         private Symbol _debugCtxSymbol;
+        private ISynchronizeInvoke _syncContext;
+        private object[] _unknownDataArgs = new object[1];
 
         public CpuState CpuState { get; set; }
         public string Disassembly { get; set; }
@@ -34,8 +39,9 @@ namespace AVR.Debugger
             return _addr2Line.GetLineInfo(addr, _file);
         }
 
-        public DebuggerWrapper()
+        public DebuggerWrapper(ISynchronizeInvoke syncContext)
         {
+            _syncContext = syncContext;
             _debugServer = new DebugServer();
             _transport = new SerialTransport();
             _addr2Line = new AvrAddrToLine();
@@ -51,6 +57,7 @@ namespace AVR.Debugger
         {
             if (File.Exists(file))
             {
+                _file = file;
                 Disassembly = new AvrDisassembler().Disassemble(file);
                 Symbols = new AvrNm().GetInfo(file);
                 SourceFiles = Symbols.Where(s => !string.IsNullOrWhiteSpace(s.File)).Select(s => s.File).ToList();
@@ -70,6 +77,7 @@ namespace AVR.Debugger
             _transport.SetSpeed(speed);
             _debugServer.SetTransport(_transport);
             _debugServer.Start();
+            _debugServer.ResetTarget();
             FireEvent(Events.Started);
         }
 
@@ -111,7 +119,14 @@ namespace AVR.Debugger
 
         private void _debugServer_UnknownData(byte data)
         {
-            _unknownDataHandlers.ForEach(a => a.Invoke(data));
+            Debug.WriteLine(MethodBase.GetCurrentMethod().Name);
+            _unknownDataArgs[0] = data;
+            _unknownDataHandlers.ForEach(handler => {
+                if (_syncContext.InvokeRequired)
+                    _syncContext.BeginInvoke(handler, _unknownDataArgs);
+                else
+                    handler.Invoke(data);
+            });
         }
 
         private void _debugServer_DebuggerDisconnected()
@@ -123,11 +138,13 @@ namespace AVR.Debugger
 
         private void _debugServer_DebuggerDetached()
         {
+            Debug.WriteLine(MethodBase.GetCurrentMethod().Name);
             FireEvent(Events.DebugLeave);
         }
 
         private void _debugServer_DebuggerAttached()
         {
+            Debug.WriteLine(MethodBase.GetCurrentMethod().Name);
             FireEvent(Events.BeforeDebugEnter);
             if (_debugCtxSymbol == null && _debugServer.Caps.HasFlag(DebuggerCapabilities.CAPS_DBG_CTX_ADDR_BIT))
             {
@@ -141,21 +158,26 @@ namespace AVR.Debugger
             {
                 var ramdData = WaitForData(new DebugCommand_Ram_Read(_debugCtxSymbol.Location, _debugCtxSymbol.Size));
                 Array.Copy(ramdData, 0, CpuState.Registers, 0, 32);
-                CpuState.PC = (uint)((ramdData[35] << 8) | (ramdData[34]));
+                CpuState.PC = (uint)(((ramdData[35] << 8) | (ramdData[34])) * 2);
                 CpuState.Stack = (uint)((ramdData[33] << 8) | (ramdData[32]));
             }
             FireEvent(Events.DebugEnter);
+            FireEvent(Events.AfterDebugEnter);
         }
 
         private void FireEvent(Events key)
         {
+            Debug.WriteLine("Fire Event " + key);
             if (!_eventHandlers.ContainsKey(key))
                 return;
 
             var handlers = _eventHandlers[key];
             foreach (var handler in handlers)
             {
-                handler.Invoke();
+                if (_syncContext.InvokeRequired)
+                    _syncContext.BeginInvoke(handler, null);
+                else
+                    handler.Invoke();
             }
         }
 

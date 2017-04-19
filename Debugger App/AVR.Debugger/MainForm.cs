@@ -1,192 +1,105 @@
 ﻿using System;
-using System.Drawing;
 using System.Windows.Forms;
-using Debugger.Server.Transports;
-using Debugger.Server;
-using Debugger.Server.Commands;
 using System.IO;
 using System.Linq;
 using WeifenLuo.WinFormsUI.Docking;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace AVR.Debugger {
 	public partial class MainForm : Form, IDocumentHost
     {
-		public MainForm() {
+        private DebuggerWrapper _debuggerWrapper;
+        private DisassemblyView _disassemblyView;
+        private SerialOutView _serialOut;
+        private CPUInfoView _cpuInfo;
+        private Dictionary<string, DockContent> _documents = new Dictionary<string, DockContent>();
+
+
+        public MainForm() {
 			InitializeComponent();
 		}
 
-        DisassemblyView _disassemblyView;
-
 		private void MainForm_Load(object sender, EventArgs e) {
-            _disassemblyView = new DisassemblyView(dockPanel1);
-		}
-
-        #region Main Menu Commands
-
-        public static String GetAbsolutePath(String relativePath, String basePath)
-        {
-            if (relativePath == null)
-                return null;
-            if (basePath == null)
-                basePath = Path.GetFullPath("."); // quick way of getting current working directory
-            else
-                basePath = GetAbsolutePath(basePath, null); // to be REALLY sure ;)
-            String path;
-            // specific for windows paths starting on \ - they need the drive added to them.
-            // I constructed this piece like this for possible Mono support.
-            if (!Path.IsPathRooted(relativePath) || "\\".Equals(Path.GetPathRoot(relativePath)))
-            {
-                if (relativePath.StartsWith(Path.DirectorySeparatorChar.ToString()))
-                    path = Path.Combine(Path.GetPathRoot(basePath), relativePath.TrimStart(Path.DirectorySeparatorChar));
-                else
-                    path = Path.Combine(basePath, relativePath);
-            }
-            else
-                path = relativePath;
-            // resolves any internal "..\" to get the true full path.
-            return Path.GetFullPath(path);
+            _debuggerWrapper = new DebuggerWrapper(this);
+            _debuggerWrapper.AddEventHandler(Debugger.Events.DebugEnter, DebugEnter);
+            _debuggerWrapper.AddEventHandler(Debugger.Events.AfterDebugEnter, UpdateMenuItems);
+            _debuggerWrapper.AddEventHandler(Debugger.Events.Started, DebugStarted);
+            _debuggerWrapper.AddEventHandler(Debugger.Events.DebugLeave, UpdateMenuItems);
+            _debuggerWrapper.AddUnknownDataHandler(UnknownDataHandler);
+            UpdateMenuItems();
         }
 
-        SourceCodeView _mainCodeView;
+        private void DebugStarted()
+        {
+            _serialOut = new SerialOutView();
+            AddDocument("serialOut", _serialOut);
+            _cpuInfo = new CPUInfoView();
+            AddDocument("cpuInfo", _cpuInfo);
+        }
+
+        private void UnknownDataHandler(byte obj)
+        {
+            _serialOut.Append(Convert.ToChar(obj).ToString());
+        }
+
+        private void DebugEnter()
+        {
+            _disassemblyView.ScrollToPc((int)_debuggerWrapper.CpuState.PC);
+            _cpuInfo.SetCpuInfo(_debuggerWrapper.CpuState);
+            var lineInfo = _debuggerWrapper.GetLineFromAddr(_debuggerWrapper.CpuState.PC);
+            if (lineInfo != null)
+            {
+                var dc = _documents.FirstOrDefault(d => d.Key == Path.GetFileName(lineInfo.File));
+                var sc = dc.Value as ISourceCodeView;
+                sc?.ScrollToLine(lineInfo.Line);
+            }
+        }
+
+        #region Main Menu Commands
 
         private void openToolStripMenuItem_Click(object sender, EventArgs e) {
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
-                _elfFile = openFileDialog.FileName;
-
-                _disassemblyView.OpenFile(openFileDialog.FileName);
-                var symbols = (new AvrNm().GetInfo(openFileDialog.FileName));
-                symbols
+                _debuggerWrapper.Load(openFileDialog.FileName);
+                _disassemblyView = new DisassemblyView();
+                _disassemblyView.LoadDisassembly(_debuggerWrapper.Disassembly);
+                AddDocument("disassembly", _disassemblyView);
+                _debuggerWrapper.Symbols
                     .Where(s => !string.IsNullOrWhiteSpace(s.File))
+                    .Select(s => Path.GetFullPath(s.File))
                     .Where(s => File.Exists(s))
-                    .Select(s => GetAbsolutePath(s.File, null))
                     .Distinct()
-                    .ForEach(f => OpenFile(f));
+                    .ToList()
+                    .ForEach(OpenFile);
             }
         }
 
-		private void zoomInToolStripMenuItem_Click(object sender, EventArgs e) {
-			_disassemblyView.ZoomIn();
-		}
-
-		private void zoomOutToolStripMenuItem_Click(object sender, EventArgs e) {
-            _disassemblyView.ZoomOut();
-		}
-
-		private void zoom100ToolStripMenuItem_Click(object sender, EventArgs e) {
-            _disassemblyView.ZoomDefault();
-		}
-		
 		#endregion
-
-		#region Utils
-
-		public static Color IntToColor(int rgb) {
-			return Color.FromArgb(255, (byte)(rgb >> 16), (byte)(rgb >> 8), (byte)rgb);
-		}
-
-		public void InvokeIfNeeded(Action action) {
-			if (this.InvokeRequired) {
-				this.BeginInvoke(action);
-			} else {
-				action.Invoke();
-			}
-		}
-
-        #endregion
-
-        DebugServer _srv;
 
         private void connectToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            _srv = new DebugServer();
-            var transport = new SerialTransport();
-            transport.SetPort("COM3");
-            transport.SetSpeed(500000);
-
-            _srv.SetTransport(transport);
-
-            _srv.DebuggerAttached += _srv_DebuggerAttached;
-            _srv.Start();
-            _srv.ResetTarget();
-
-            _serialOut = new SerialOutView(dockPanel1);
-            _srv.UnknownData += _srv_UnknownData;
-            _cpuOut = new CPUInfoView(dockPanel1);
-        }
-
-        private void _srv_UnknownData(byte data)
-        {
-            InvokeIfNeeded(() =>
-            {
-                _serialOut.Append(Convert.ToChar(data).ToString());
-            });
-        }
-
-        private byte[] WaitForData(IDebugCommand cmd)
-        {
-            var cmdTask = _srv.AddCommand(cmd);
-            cmdTask.Wait();
-            return cmdTask.Result;
-        }
-
-        private void _srv_DebuggerAttached()
-        {
-            InvokeIfNeeded(() => { DebuggerAttached(); });
-        }
-
-        private AvrAddrToLine _addr2Line = new AvrAddrToLine();
-        private string _elfFile;
-        private SerialOutView _serialOut;
-
-        private void DebuggerAttached()
-        {
-            var dbgCxtLocationData = WaitForData(new DebugCommand_CtxRead());
-
-            var location = (dbgCxtLocationData[0] << 8) | (dbgCxtLocationData[1]);
-            var size = (dbgCxtLocationData[2] << 8) | (dbgCxtLocationData[3]);
-
-            var ramdData = WaitForData(new DebugCommand_Ram_Read((uint)location, (uint)size));
-            var cpuState = GetCpuState(ramdData);
-            _cpuOut.SetCpuInfo(cpuState);
-            _disassemblyView.ScrollToPc((int)cpuState.PC * 2);
-            var li = _addr2Line.GetLineInfo((uint)(cpuState.PC * 2), _elfFile);
-            if (li != null)
-            {
-                var dc = _documents.FirstOrDefault(d => d.Key == Path.GetFileName(li.File));
-                var sc = dc.Value as ISourceCodeView;
-                sc?.ScrollToLine(li.Line);
-            }
-
-            stepToolStripMenuItem.Enabled = true;
-        }
-
-        byte[] registersBuffer = new byte[32];
-        CpuState _state = new CpuState();
-        private CPUInfoView _cpuOut;
-
-        private CpuState GetCpuState(byte[] ramdData)
-        {
-            Array.Copy(ramdData, 0, registersBuffer, 0, 32);
-            _state.Registers = registersBuffer;
-            _state.PC = (uint)((ramdData[35] << 8) | (ramdData[34]));
-            _state.Stack = (uint)((ramdData[33] << 8) | (ramdData[32]));
-            return _state;
+            _debuggerWrapper.Connect("COM3", 500000);
         }
 
         private void stepToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            stepToolStripMenuItem.Enabled = false;
-            _srv.Step();
+            _debuggerWrapper.Step();
         }
 
         private void continueToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            _srv.Continue();
+            _debuggerWrapper.Step();
         }
 
-        private Dictionary<string, DockContent> _documents = new Dictionary<string, DockContent>();
+        private void UpdateMenuItems(bool enabled)
+        {
+            Debug.WriteLine("Update menu items " + _debuggerWrapper.InDebug);
+            stepToolStripMenuItem.Enabled =
+                continueToolStripMenuItem.Enabled = 
+                _debuggerWrapper.InDebug;
+        }
+
         public void OpenFile(string file)
         {
             if (!Path.IsPathRooted(file))
