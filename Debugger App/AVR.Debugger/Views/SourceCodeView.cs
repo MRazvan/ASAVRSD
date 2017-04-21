@@ -1,62 +1,78 @@
-﻿using ScintillaNET;
-using System.Drawing;
+﻿using System.Drawing;
 using System.IO;
+using System.Windows.Forms;
+using AVR.Debugger.Interfaces;
+using ScintillaNET;
 using WeifenLuo.WinFormsUI.Docking;
 
-namespace AVR.Debugger
+namespace AVR.Debugger.Views
 {
     public class SourceCodeView : DockContent, ISourceCodeView
     {
-
-        private Scintilla _textControl;
-
         /// <summary>
-        /// the background color of the text area
+        ///     the background color of the text area
         /// </summary>
         private const int BACK_COLOR = 0x2A211C;
 
         /// <summary>
-        /// default text color of the text area
+        ///     default text color of the text area
         /// </summary>
         private const int FORE_COLOR = 0xB7B7B7;
 
         /// <summary>
-        /// change this to whatever margin you want the line numbers to show in
+        ///     change this to whatever margin you want the line numbers to show in
         /// </summary>
         private const int NUMBER_MARGIN = 1;
 
         private string _file;
+
+        private readonly Scintilla _textControl;
+
+        public SourceCodeView()
+        {
+            _textControl = new Scintilla();
+            _textControl.Dock = DockStyle.Fill;
+            _textControl.WrapMode = WrapMode.None;
+            InitScintilla();
+            _textControl.ReadOnly = true;
+            Controls.Add(_textControl);
+            CloseButtonVisible = false;
+        }
+
         public string FileName
         {
-            get
-            {
-                return Path.GetFileName(_file);
-            }
+            get { return Path.GetFileName(_file); }
         }
 
         public string FilePath
         {
-            get
+            get { return Path.GetDirectoryName(_file); }
+        }
+
+        public void LoadDataFromFile(string path)
+        {
+            if (File.Exists(path))
             {
-                return Path.GetDirectoryName(_file);
+                Text = Path.GetFileName(path);
+                _textControl.ReadOnly = false;
+                _textControl.MarkerDeleteAll(1);
+                _textControl.Text = string.Empty;
+                _textControl.Text = File.ReadAllText(path);
+                _textControl.ReadOnly = true;
+                _file = path;
             }
         }
 
-        public SourceCodeView(DockPanel panel)
+        public void ScrollToLine(int line)
         {
-            _textControl = new Scintilla();
-            _textControl.Dock = System.Windows.Forms.DockStyle.Fill;
-            _textControl.WrapMode = WrapMode.None;
-            InitScintilla();
-            _textControl.ReadOnly = true;
-            this.Controls.Add(_textControl);
-            this.CloseButtonVisible = false;
-            if (panel.DocumentStyle == DocumentStyle.SystemMdi)
-            {
-                this.MdiParent = this;
-                this.Show();
-            }
-            else this.Show(panel);
+            _textControl.MarkerDeleteAll(1);
+            _textControl.Lines[line].MarkerAdd(1);
+            _textControl.Lines[line].EnsureVisible();
+        }
+
+        public void ClearMakers()
+        {
+            _textControl.MarkerDeleteAll(1);
         }
 
         private void InitScintilla()
@@ -97,32 +113,6 @@ namespace AVR.Debugger
             nums.Type = MarginType.Number;
             nums.Sensitive = true;
             nums.Mask = 0;
-        }
-
-        public void LoadDataFromFile(string path)
-        {
-            if (File.Exists(path))
-            {
-                this.Text = Path.GetFileName(path);
-                _textControl.ReadOnly = false;
-                _textControl.MarkerDeleteAll(1);
-                _textControl.Text = string.Empty;
-                _textControl.Text = File.ReadAllText(path);
-                _textControl.ReadOnly = true;
-                _file = path;
-            }
-        }
-
-        public void ScrollToLine(int line)
-        {
-            _textControl.MarkerDeleteAll(1);
-            _textControl.Lines[line].MarkerAdd(1);
-            _textControl.Lines[line].EnsureVisible();
-        }
-
-        public void ClearMakers()
-        {
-            _textControl.MarkerDeleteAll(1);
         }
     }
 }

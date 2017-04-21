@@ -125,6 +125,10 @@ namespace Debugger.Server
         private void ExecuteCommandWithClearState(IDebugCommand command)
         {
             InDebug = false;
+            _state = DebuggerState.NotConnected;
+            // Notify anyone interested
+            DebuggerDetached?.Invoke();
+
             Trace.WriteLine("Debugger Server - Execute Command with Clear " + command);
             // Clear the commands buffer
             DebugCommandWrapper cmd;
@@ -134,11 +138,7 @@ namespace Debugger.Server
             _currentCommand = null;
             _currentCommandBuffer = null;
             _currentCommandReceiveIdx = 0;
-
-            _state = DebuggerState.NotConnected;
             _transport.Write(command.CommandBuffer);
-            // Notify anyone interested
-            DebuggerDetached?.Invoke();
         }
 
         public void ResetTarget()

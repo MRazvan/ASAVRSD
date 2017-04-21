@@ -35,43 +35,28 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Debugger.Server">
-      <HintPath>D:\GIT\ASAVRSD\Debugger.Server\bin\Debug\Debugger.Server.dll</HintPath>
-    </Reference>
     <Reference Include="ScintillaNET">
       <HintPath>..\libs\ScintillaNET.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Deployment" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Xml" />
     <Reference Include="WeifenLuo.WinFormsUI.Docking">
       <HintPath>..\libs\WeifenLuo.WinFormsUI.Docking.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Tools\AvrAddrToLine.cs" />
+    <Compile Include="PluginManager.cs" />
     <Compile Include="Tools\AvrDisassembler.cs" />
-    <Compile Include="Tools\AvrNm.cs" />
     <Compile Include="Utils.cs" />
     <Compile Include="Views\CPUInfoView.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Models\CpuState.cs" />
     <Compile Include="DebuggerWrapper.cs" />
     <Compile Include="Views\DisassemblyView.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Interfaces\IDebuggerWrapper.cs" />
-    <Compile Include="Interfaces\IDocumentHost.cs" />
-    <Compile Include="Interfaces\ISourceCodeView.cs" />
-    <Compile Include="Models\LineInfo.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -86,8 +71,6 @@
     <Compile Include="Views\SourceCodeView.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Models\Symbol.cs" />
-    <Compile Include="Models\SymbolSection.cs" />
     <Compile Include="ToolUtils.cs" />
     <EmbeddedResource Include="MainForm.resx">
       <DependentUpon>MainForm.cs</DependentUpon>
@@ -114,15 +97,23 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="gcc\avr-addr2line.exe">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="gcc\avr-nm.exe">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
     <Content Include="gcc\avr-objdump.exe">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Debugger.Server\Debugger.Server.csproj">
+      <Project>{08d43202-8288-41ad-8add-dd69a5ce6dc6}</Project>
+      <Name>Debugger.Server</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\AVR.Debugger.Interfaces\AVR.Debugger.Interfaces.csproj">
+      <Project>{6ca5faab-57bb-49c6-baff-6c53605a8868}</Project>
+      <Name>AVR.Debugger.Interfaces</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\ELFSharp\ELFSharp.csproj">
+      <Project>{cf944e09-7c14-433c-a185-161848e989b3}</Project>
+      <Name>ELFSharp</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
