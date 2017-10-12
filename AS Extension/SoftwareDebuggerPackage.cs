@@ -221,29 +221,6 @@ namespace SoftwareDebuggerExtension
             _dte.Events.BuildEvents.OnBuildDone -= BuildEventsOnOnBuildDone;
             var pi = new ProjectInfo(_dte.ActiveSolutionProjects[0] as Project);
 
-            // Display information about the program
-            //var process = new Process();
-            //process.StartInfo = new ProcessStartInfo
-            //{
-            //    FileName = $"{Path.Combine(pi.ToolchainPackageManager.DefaultPackage.BasePath, "avr-nm.exe")}",
-            //    CreateNoWindow = true,
-            //    WindowStyle = ProcessWindowStyle.Hidden,
-            //    UseShellExecute = false,
-            //    RedirectStandardError = true,
-            //    RedirectStandardOutput = true,
-            //    Arguments = $" -S -f bsd --size-sort  \"{pi.OutputPathElf}\""
-            //};
-
-            //process.EnableRaisingEvents = true;
-            //process.OutputDataReceived += (sender, e) => _output.DebugOutLine(e.Data);
-            //process.ErrorDataReceived += (sender, e) => _output.DebugOutLine(e.Data);
-            //process.Start();
-            //process.BeginErrorReadLine();
-            //process.BeginOutputReadLine();
-            //process.WaitForExit(5000);
-            //if (!process.HasExited)
-            //    process.Kill();
-
             // Upload the program
             var prog = new Process();
             prog.StartInfo = new ProcessStartInfo

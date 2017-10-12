@@ -89,7 +89,7 @@ namespace SoftwareDebuggerExtension
                 var pi = new ProjectInfo(proj);
                 if (!pi.IsValid)
                     return;
-                pi.AddDefines(Settings.Instance.SolutionSettings.Options, Settings.DebuggingCaps);
+                pi.UpdateToolchainOptions(Settings.Instance.SolutionSettings.Options, Settings.DebuggingCaps, Settings.Instance.SolutionSettings.DebugIncludePaths);
             }
         }
     }

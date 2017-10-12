@@ -10,12 +10,14 @@
 #define DEBUG_H_
 
 #include <stdint.h>
+#include <stdarg.h>
 #include <avr/io.h>
 #include <avr/common.h>
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
 
 #include "debug_defs.h"
+#include "debug_printf.h"
 
 #define DEBUG_PROTOCOL_VERSION		0x01
 
@@ -64,7 +66,6 @@ extern "C" {
 //	- Basically an ATmega328
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
-
 
 //	MINIMIZE_RAM will force inline everything, so we don't have to push / pop registers between calls
 //			it will however increase the flash size, we might even figure out a way to optimize the ram structure ????
@@ -327,11 +328,20 @@ typedef struct {
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
-// We don't need the context to be initialized, we don't care about the data
-//	that is originally in there
+__attribute__((section(".noinit")))
 t_dbg_context dbg_context;
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
+__attribute__((naked, used, optimize("-Os"), section(".init5")))
+void dbg_init(){
+	UBRR0H = (uint8_t)(1>>8);
+	UBRR0L = (uint8_t)(1);
+	UCSR0B = (1<<RXEN0)|(1<<TXEN0);
+	UCSR0C = ((1<<UCSZ00)|(1<<UCSZ01));	
+	#if defined(CAPS_EXECUTE) || defined(CAPS_UART_HIGH_SPEED) || defined(CAPS_SINGLE_STEP)
+		dbg_context.ctx_state = 0;
+	#endif
+}
 
 #ifdef CAPS_SAVE_POWER_REG
 INLINE
@@ -777,7 +787,7 @@ if (dbg_context.ctx_state & _BV(DBG_SINGLE_STEP_ISR)){
 	}
 #endif
 
-// Used for interrupt handling, instead of a reset we can enter debug and see what happened
+// Used for interrupt handling, instead of a reset we can enter debug and see what happened, maybe?
 //__attribute__((used, naked))
 //void __vector_default(){
 	//dbg_brk();

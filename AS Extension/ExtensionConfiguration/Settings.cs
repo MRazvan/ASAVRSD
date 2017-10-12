@@ -36,11 +36,9 @@ namespace SoftwareDebuggerExtension.ExtensionConfiguration
             SolutionSettingsLoaded = false;
         }
 
-        public static string AvrDudeFullPath => Path.Combine(Instance.ExtensionSettings.ArduinoIdeLocation, AVRDudePath)
-        ;
+        public static string AvrDudeFullPath => Path.Combine(Instance.ExtensionSettings.ArduinoIdeLocation, AVRDudePath);
 
-        public static string AvrDudeConfigFullPath
-            => Path.Combine(Instance.ExtensionSettings.ArduinoIdeLocation, AVRDudeConfig);
+        public static string AvrDudeConfigFullPath => Path.Combine(Instance.ExtensionSettings.ArduinoIdeLocation, AVRDudeConfig);
 
         public static Settings Instance { get; }
         public ExtensionSettings ExtensionSettings { get; private set; }
@@ -165,5 +163,6 @@ namespace SoftwareDebuggerExtension.ExtensionConfiguration
     public class SolutionSettings
     {
         public List<string> Options { get; set; } = new List<string>();
+        public List<string> DebugIncludePaths { get; set; } = new List<string>() { @"D:\GIT\ASAVRSD\DebuggerLib\DebugClient\" };
     }
 }

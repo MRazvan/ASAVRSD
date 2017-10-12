@@ -5,8 +5,9 @@ using Atmel.Studio.Extensibility.Toolchain;
 using Atmel.Studio.Framework;
 using Atmel.Studio.Services;
 using Atmel.Studio.Services.Device;
-using Atmel.VsIde.AvrStudio.Project.Management;
 using EnvDTE;
+using Atmel.VsIde.AvrStudio.Project.Management;
+using System;
 
 namespace SoftwareDebuggerExtension
 {
@@ -60,6 +61,7 @@ namespace SoftwareDebuggerExtension
         public IProjectHandle ProjectHandle { get; }
         public ProjectToolchainOptions ToolchainOptions { get; }
         public IDevice Device { get; set; }
+
         public Project Project { get; set; }
         public string ToolName { get; set; }
         public AvrProjectNode AvrNode { get; set; }
@@ -71,16 +73,9 @@ namespace SoftwareDebuggerExtension
             return Device?.Architecture.ToLower() == "avr8" && ToolName == "Simulator" && IsExecutable;
         }
 
-        public void AddDefines(List<string> defines, List<string> allDefines)
+        public void UpdateToolchainOptions(List<string> options, List<string> debuggingCaps, List<string> includePaths)
         {
-            var changed = false;
-
-            if (ToolchainOptions.CCompiler != null)
-                changed |= UpdateDefines(ToolchainOptions.CCompiler.SymbolDefines, defines, allDefines);
-
-            if (ToolchainOptions.CppCompiler != null)
-                changed |= UpdateDefines(ToolchainOptions.CppCompiler.SymbolDefines, defines, allDefines);
-
+            var changed = AddIncludePaths(includePaths) || AddDefines(options, debuggingCaps);
             if (changed)
             {
                 ProjectHandle?.GetConfigNames()
@@ -91,6 +86,50 @@ namespace SoftwareDebuggerExtension
                     });
             }
         }
+
+        private bool AddIncludePaths(List<string> addPaths)
+        {
+            var changed = false;
+            var includePaths = ToolchainOptions.CCompiler?.IncludePaths;
+            if (includePaths != null)
+            {
+                foreach (var path in addPaths)
+                {
+                    if (!includePaths.Contains(path))
+                    {
+                        changed = true;
+                        includePaths.Add(path);
+                    }
+                }
+            }
+
+            includePaths = ToolchainOptions.CppCompiler?.IncludePaths;
+            if (includePaths != null)
+            {
+                foreach (var path in addPaths)
+                {
+                    if (!includePaths.Contains(path))
+                    {
+                        changed = true;
+                        includePaths.Add(path);
+                    }
+                }
+            }
+            return changed;
+        }
+
+        private bool AddDefines(List<string> defines, List<string> allDefines)
+        {
+            var changed = false;
+
+            if (ToolchainOptions.CCompiler != null)
+                changed |= UpdateDefines(ToolchainOptions.CCompiler.SymbolDefines, defines, allDefines);
+
+            if (ToolchainOptions.CppCompiler != null)
+                changed |= UpdateDefines(ToolchainOptions.CppCompiler.SymbolDefines, defines, allDefines);
+            return changed;
+        }
+
 
         private bool UpdateDefines(IList<string> destination, IList<string> source, IList<string> allcustom)
         {

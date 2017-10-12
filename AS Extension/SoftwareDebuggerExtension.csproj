@@ -48,9 +48,10 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <CopyVsixExtensionFiles>True</CopyVsixExtensionFiles>
-    <CopyVsixExtensionLocation>C:\Program Files %28x86%29\Atmel\Studio\7.0\Extensions\TestExtension</CopyVsixExtensionLocation>
+    <CopyVsixExtensionLocation>D:\Atmel\Studio\7.0\Extensions\TestExtension</CopyVsixExtensionLocation>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
     <DeployExtension>True</DeployExtension>
+    <CreateVsixContainer>True</CreateVsixContainer>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -65,14 +66,16 @@
     <CopyVsixExtensionLocation>C:\Program Files %28x86%29\Atmel\Studio\7.0\Extensions\TestExtension</CopyVsixExtensionLocation>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Atmel.Studio.Services.Interfaces">
-      <HintPath>C:\Program Files (x86)\Atmel\Atmel Studio 7.0 SDK\assemblies\Atmel.Studio.Services.Interfaces.dll</HintPath>
+    <Reference Include="Atmel.Studio.Services.Interfaces, Version=7.0.0.0, Culture=neutral, PublicKeyToken=d264112969646cc9, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\libs\Atmel.Studio.Services.Interfaces.dll</HintPath>
     </Reference>
-    <Reference Include="Atmel.Studio.Toolchain.Interfaces">
-      <HintPath>C:\Program Files (x86)\Atmel\Atmel Studio 7.0 SDK\assemblies\Atmel.Studio.Toolchain.Interfaces.dll</HintPath>
+    <Reference Include="Atmel.Studio.Toolchain.Interfaces, Version=7.0.0.0, Culture=neutral, PublicKeyToken=d264112969646cc9, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\libs\Atmel.Studio.Toolchain.Interfaces.dll</HintPath>
     </Reference>
     <Reference Include="AvrProjectManagement">
-      <HintPath>C:\Program Files (x86)\Atmel\Studio\7.0\Extensions\Application\AvrProjectManagement.dll</HintPath>
+      <HintPath>..\libs\AvrProjectManagement.dll</HintPath>
     </Reference>
     <Reference Include="envdte, Version=8.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <EmbedInteropTypes>True</EmbedInteropTypes>
@@ -85,7 +88,7 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="IronPython">
-      <HintPath>C:\Program Files (x86)\Atmel\Studio\7.0\Extensions\Application\IronPython.dll</HintPath>
+      <HintPath>..\libs\IronPython.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="Microsoft.VisualStudio.Imaging, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
@@ -175,7 +178,7 @@
     <Reference Include="System.Xaml" />
     <Reference Include="System.Xml" />
     <Reference Include="TargetService">
-      <HintPath>C:\Program Files (x86)\Atmel\Studio\7.0\Extensions\Application\TargetService.dll</HintPath>
+      <HintPath>..\libs\TargetService.dll</HintPath>
     </Reference>
     <Reference Include="WindowsBase" />
   </ItemGroup>
@@ -220,7 +223,6 @@
   <ItemGroup>
     <None Include="app.config" />
     <None Include="packages.config" />
-    <EmbeddedResource Include="Resources\debug_lib.zip" />
     <None Include="source.extension.vsixmanifest">
       <SubType>Designer</SubType>
     </None>

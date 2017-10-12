@@ -148,6 +148,7 @@
 
         <Combo type="DynamicCombo" guid="guidSoftwareDebuggerCmdSet" id="cmdSelectBaud" priority="0x0200" defaultWidth="100" idCommandList="cmdSelectBaudList">
             <Parent guid="guidSoftwareDebuggerCmdSet" id="MyMenuGroup" />
+            <CommandFlag>DefaultDisabled</CommandFlag>
             <Strings>
                 <ButtonText>Baud: </ButtonText>
                 <MenuText>Baud: </MenuText>
@@ -158,6 +159,7 @@
 
         <Combo type="DynamicCombo" guid="guidSoftwareDebuggerCmdSet" id="cmdSelectBaud" priority="0x0200" defaultWidth="100" idCommandList="cmdSelectBaudList">
             <Parent guid="guidSoftwareDebuggerCmdSet" id="MyMenuGroupToolbar" />
+            <CommandFlag>DefaultDisabled</CommandFlag>
             <Strings>
                 <ButtonText>Baud: </ButtonText>
                 <MenuText>Baud: </MenuText>

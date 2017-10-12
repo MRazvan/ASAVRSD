@@ -92,7 +92,7 @@ namespace AVR.Debugger {
             _debuggerWrapper.Step();
         }
 
-        private void UpdateMenuItems(bool enabled)
+        private void UpdateMenuItems()
         {
             Debug.WriteLine("Update menu items " + _debuggerWrapper.InDebug);
             stepToolStripMenuItem.Enabled =
