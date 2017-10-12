@@ -1,50 +1,42 @@
-﻿using Debugger.Server;
-using Debugger.Server.Transports;
+﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System;
-using Debugger.Server.Commands;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Reflection;
+using System.IO;
+using System.Linq;
+using AVR.Debugger.Interfaces;
+using AVR.Debugger.Interfaces.Models;
+using AVR.Debugger.Tools;
+using Debugger.Server;
+using Debugger.Server.Commands;
+using Debugger.Server.Transports;
+using ELFSharp.DWARF;
+using ELFSharp.ELF;
+using ELFSharp.ELF.Sections;
+using LineInfo = AVR.Debugger.Interfaces.Models.LineInfo;
 
 namespace AVR.Debugger
 {
     public class DebuggerWrapper : IDebuggerWrapper
     {
-        private AvrAddrToLine _addr2Line;
-        private string _file;
-        private DebugServer _debugServer;
-        private ITransport _transport;
-        private Dictionary<Events, List<Action>> _eventHandlers;
-        private List<Action<byte>> _unknownDataHandlers;
+        public DWARFData Dwarf { get; private set; }
+        public ELF<uint> ElfFile { get; private set; }
+
         private Symbol _debugCtxSymbol;
-        private ISynchronizeInvoke _syncContext;
-        private object[] _unknownDataArgs = new object[1];
+        private readonly DebugServer _debugServer;
+        private readonly Dictionary<Events, List<Action>> _eventHandlers;
+        private string _file;
+        private readonly ISynchronizeInvoke _syncContext;
+        private readonly ITransport _transport;
 
-        public CpuState CpuState { get; set; }
-        public string Disassembly { get; set; }
-        public List<string> SourceFiles { get; set; }
-        public List<Symbol> Symbols { get; set; }
-        public bool InDebug => _debugServer.InDebug;
-        public DebuggerCapabilities Caps => _debugServer.Caps;
-        public uint Signature => _debugServer.DeviceSignature;
-        public int Version => _debugServer.DebugVersion;
+        private readonly List<Action<byte>> _unknownDataHandlers;
 
-        public LineInfo GetLineFromAddr(uint addr)
-        {
-            if (string.IsNullOrWhiteSpace(_file) || !File.Exists(_file))
-                return null;
-            return _addr2Line.GetLineInfo(addr, _file);
-        }
 
         public DebuggerWrapper(ISynchronizeInvoke syncContext)
         {
             _syncContext = syncContext;
             _debugServer = new DebugServer();
             _transport = new SerialTransport();
-            _addr2Line = new AvrAddrToLine();
             _eventHandlers = new Dictionary<Events, List<Action>>();
             _unknownDataHandlers = new List<Action<byte>>();
             CpuState = new CpuState
@@ -53,32 +45,53 @@ namespace AVR.Debugger
             };
         }
 
+        public CpuState CpuState { get; set; }
+        public string Disassembly { get; set; }
+        public List<string> SourceFiles { get; set; }
+        public bool InDebug => _debugServer.InDebug;
+        public DebuggerCapabilities Caps => _debugServer.Caps;
+        public uint Signature => _debugServer.DeviceSignature;
+        public int Version => _debugServer.DebugVersion;
+
+        public LineInfo GetLineFromAddr(uint addr)
+        {
+            var li = Dwarf.LineSection.GetLineFromAddress(addr);
+            if (li != null)
+                return new LineInfo {File = SourceFiles.First(s => s.EndsWith(li.File.File)), Line = (int) li.Line};
+            return null;
+        }
+
         public void Load(string file)
         {
             if (File.Exists(file))
             {
                 _file = file;
+                ElfFile = ELFReader.Load<uint>(_file);
+                Dwarf = new DWARFData(ElfFile);
                 Disassembly = new AvrDisassembler().Disassemble(file);
-                Symbols = new AvrNm().GetInfo(file);
-                SourceFiles = Symbols.Where(s => !string.IsNullOrWhiteSpace(s.File)).Select(s => s.File).ToList();
-                if (_debugCtxSymbol == null)
-                    _debugCtxSymbol = Symbols.FirstOrDefault(s => s.Name == "dbg_ctx");
-            }
-        }
+                SourceFiles = new List<string>();
+                Dwarf.LineSection.GetFiles().ForEach(f =>
+                {
+                    var path = Path.Combine(f.Directory, f.File);
+                    if (path.StartsWith("/") || path.StartsWith("..") || path.StartsWith("\\"))
+                        path = Path.Combine(Path.GetDirectoryName(_file), path);
+                    SourceFiles.Add(Path.GetFullPath(path));
+                });
 
-        public void Connect(string port, int speed)
-        {
-            FireEvent(Events.Starting);
-            _debugServer.DebuggerAttached += _debugServer_DebuggerAttached;
-            _debugServer.DebuggerDetached += _debugServer_DebuggerDetached;
-            _debugServer.DebuggerDisconnected += _debugServer_DebuggerDisconnected;
-            _debugServer.UnknownData += _debugServer_UnknownData;
-            _transport.SetPort(port);
-            _transport.SetSpeed(speed);
-            _debugServer.SetTransport(_transport);
-            _debugServer.Start();
-            _debugServer.ResetTarget();
-            FireEvent(Events.Started);
+                var symbols = ((ISymbolTable) ElfFile.GetSection(".symtab")).Entries.Where(x => x.Type == SymbolType.Object);
+                if (_debugCtxSymbol == null)
+                {
+                    var entry = symbols.FirstOrDefault(s => s.Name == "dbg_context");
+                    if (entry != null)
+                    {
+                        _debugCtxSymbol = new Symbol
+                        {
+                            Size = (uint) entry.Size,
+                            Location = (uint) (entry.Value - 0x800000)
+                        };
+                    }
+                }
+            }
         }
 
         public void Step()
@@ -117,13 +130,27 @@ namespace AVR.Debugger
             _unknownDataHandlers.Add(action);
         }
 
+        public void Connect(string port, int speed)
+        {
+            FireEvent(Events.Starting);
+            _debugServer.DebuggerAttached += _debugServer_DebuggerAttached;
+            _debugServer.DebuggerDetached += _debugServer_DebuggerDetached;
+            _debugServer.DebuggerDisconnected += _debugServer_DebuggerDisconnected;
+            _debugServer.UnknownData += _debugServer_UnknownData;
+            _transport.SetPort(port);
+            _transport.SetSpeed(speed);
+            _debugServer.SetTransport(_transport);
+            _debugServer.Start();
+            _debugServer.ResetTarget();
+            FireEvent(Events.Started);
+        }
+
         private void _debugServer_UnknownData(byte data)
         {
-            Debug.WriteLine(MethodBase.GetCurrentMethod().Name);
-            _unknownDataArgs[0] = data;
-            _unknownDataHandlers.ForEach(handler => {
+            _unknownDataHandlers.ForEach(handler =>
+            {
                 if (_syncContext.InvokeRequired)
-                    _syncContext.BeginInvoke(handler, _unknownDataArgs);
+                    _syncContext.BeginInvoke(handler, new object[] {data});
                 else
                     handler.Invoke(data);
             });
@@ -138,28 +165,26 @@ namespace AVR.Debugger
 
         private void _debugServer_DebuggerDetached()
         {
-            Debug.WriteLine(MethodBase.GetCurrentMethod().Name);
             FireEvent(Events.DebugLeave);
         }
 
         private void _debugServer_DebuggerAttached()
         {
-            Debug.WriteLine(MethodBase.GetCurrentMethod().Name);
             FireEvent(Events.BeforeDebugEnter);
             if (_debugCtxSymbol == null && _debugServer.Caps.HasFlag(DebuggerCapabilities.CAPS_DBG_CTX_ADDR_BIT))
             {
                 var dbgCxtLocationData = WaitForData(new DebugCommand_CtxRead());
 
-                var location = (dbgCxtLocationData[0] << 8) | (dbgCxtLocationData[1]);
-                var size = (dbgCxtLocationData[2] << 8) | (dbgCxtLocationData[3]);
-                _debugCtxSymbol = new Symbol { Location = (uint)location, Size = (uint)size };
+                var location = (dbgCxtLocationData[0] << 8) | dbgCxtLocationData[1];
+                var size = (dbgCxtLocationData[2] << 8) | dbgCxtLocationData[3];
+                _debugCtxSymbol = new Symbol {Location = (uint) location, Size = (uint) size};
             }
             if (_debugCtxSymbol != null && _debugServer.Caps.HasFlag(DebuggerCapabilities.CAPS_SAVE_CONTEXT_BIT))
             {
                 var ramdData = WaitForData(new DebugCommand_Ram_Read(_debugCtxSymbol.Location, _debugCtxSymbol.Size));
                 Array.Copy(ramdData, 0, CpuState.Registers, 0, 32);
-                CpuState.PC = (uint)(((ramdData[35] << 8) | (ramdData[34])) * 2);
-                CpuState.Stack = (uint)((ramdData[33] << 8) | (ramdData[32]));
+                CpuState.PC = (uint) (((ramdData[35] << 8) | ramdData[34]) * 2);
+                CpuState.Stack = (uint) ((ramdData[33] << 8) | ramdData[32]);
             }
             FireEvent(Events.DebugEnter);
             FireEvent(Events.AfterDebugEnter);
@@ -173,12 +198,10 @@ namespace AVR.Debugger
 
             var handlers = _eventHandlers[key];
             foreach (var handler in handlers)
-            {
                 if (_syncContext.InvokeRequired)
                     _syncContext.BeginInvoke(handler, null);
                 else
                     handler.Invoke();
-            }
         }
 
         private byte[] WaitForData(IDebugCommand cmd)
@@ -187,6 +210,5 @@ namespace AVR.Debugger
             cmdTask.Wait();
             return cmdTask.Result;
         }
-
     }
 }

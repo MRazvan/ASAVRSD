@@ -328,6 +328,8 @@ typedef struct {
 
 //////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////
+// We don't need the context to be initialized, we don't care about the data
+//	that is originally in there
 __attribute__((section(".noinit")))
 t_dbg_context dbg_context;
 //////////////////////////////////////////////////////////////////////////
@@ -341,6 +343,15 @@ void dbg_init(){
 	#if defined(CAPS_EXECUTE) || defined(CAPS_UART_HIGH_SPEED) || defined(CAPS_SINGLE_STEP)
 		dbg_context.ctx_state = 0;
 	#endif
+}
+
+__attribute__((used, section(".init3"), optimize("-Os"), naked))
+void dbg_init(){
+	UBRR0H = (uint8_t)(1>>8);
+	UBRR0L = (uint8_t)(1);
+	UCSR0B = (1<<RXEN0)|(1<<TXEN0);
+	UCSR0C = ((1<<UCSZ00)|(1<<UCSZ01));		
+	dbg_context.ctx_state = 0;
 }
 
 #ifdef CAPS_SAVE_POWER_REG

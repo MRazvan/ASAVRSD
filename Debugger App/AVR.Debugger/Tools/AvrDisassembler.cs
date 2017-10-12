@@ -1,8 +1,8 @@
 ﻿using System.Diagnostics;
 
-namespace AVR.Debugger
+namespace AVR.Debugger.Tools
 {
-    class AvrDisassembler
+    internal class AvrDisassembler
     {
         public string Disassemble(string file)
         {
