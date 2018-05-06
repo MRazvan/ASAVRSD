@@ -87,9 +87,12 @@ namespace Debugger.Server
 
         public void Start()
         {
-            _transport.Connect();
-            _receiverWorker.RunWorkerAsync();
-            _commandsWorker.RunWorkerAsync();
+            if (!_receiverWorker.IsBusy)
+            {
+                _transport.Connect();
+                _receiverWorker.RunWorkerAsync();
+                _commandsWorker.RunWorkerAsync();
+            }
         }
 
         public Task<byte[]> AddCommand(IDebugCommand cmd)

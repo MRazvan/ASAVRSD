@@ -1,0 +1,85 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Plugins", "Plugins", "{0331AD36-226E-4667-8BA4-2BACFED61529}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AVR.Debugger.CPUViewer", "Plugins\AVR.Debugger.CPUView\AVR.Debugger.CPUViewer.csproj", "{6EF99BE9-E574-45CC-AB36-2C473C557BFC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AVR.Debugger.StackViewer", "Plugins\AVR.Debugger.StackView\AVR.Debugger.StackViewer.csproj", "{BA5C3A92-5F64-4F51-9600-F7B091C09990}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AVR.Debugger.WatchViewer", "Plugins\AVR.Debugger.WatchView\AVR.Debugger.WatchViewer.csproj", "{E463986A-B118-4607-934F-4F210BB1C982}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AVR.Debugger", "AVR.Debugger\AVR.Debugger.csproj", "{69CE0FB9-99CF-4A40-A0AB-E39F5050054E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AVR.Debugger.Interfaces", "AVR.Debugger.Interfaces\AVR.Debugger.Interfaces.csproj", "{6CA5FAAB-57BB-49C6-BAFF-6C53605A8868}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ELFSharp", "ELFSharp\ELFSharp.csproj", "{CF944E09-7C14-433C-A185-161848E989B3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Debugger.Server", "..\Debugger.Server\Debugger.Server.csproj", "{08D43202-8288-41AD-8ADD-DD69A5CE6DC6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AVR.Debugger.Console", "AVR.Debugger.CommandLine\AVR.Debugger.Console.csproj", "{671916B9-8832-4F6C-8179-DF115B0C3E3B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AVR.Debugger.SerialView", "Plugins\AVR.Debugger.SerialView\AVR.Debugger.SerialView.csproj", "{90434AD6-0849-46DD-9B51-B447619B7ACD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AVR.Debugger.DeviceInfo", "Plugins\AVR.Debugger.DeviceInfo\AVR.Debugger.DeviceInfo.csproj", "{FFD768FF-1B4F-4DE2-A3FB-15E3E9264A4D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{6EF99BE9-E574-45CC-AB36-2C473C557BFC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6EF99BE9-E574-45CC-AB36-2C473C557BFC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6EF99BE9-E574-45CC-AB36-2C473C557BFC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6EF99BE9-E574-45CC-AB36-2C473C557BFC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BA5C3A92-5F64-4F51-9600-F7B091C09990}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BA5C3A92-5F64-4F51-9600-F7B091C09990}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BA5C3A92-5F64-4F51-9600-F7B091C09990}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BA5C3A92-5F64-4F51-9600-F7B091C09990}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E463986A-B118-4607-934F-4F210BB1C982}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E463986A-B118-4607-934F-4F210BB1C982}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E463986A-B118-4607-934F-4F210BB1C982}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E463986A-B118-4607-934F-4F210BB1C982}.Release|Any CPU.Build.0 = Release|Any CPU
+		{69CE0FB9-99CF-4A40-A0AB-E39F5050054E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{69CE0FB9-99CF-4A40-A0AB-E39F5050054E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{69CE0FB9-99CF-4A40-A0AB-E39F5050054E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{69CE0FB9-99CF-4A40-A0AB-E39F5050054E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6CA5FAAB-57BB-49C6-BAFF-6C53605A8868}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6CA5FAAB-57BB-49C6-BAFF-6C53605A8868}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6CA5FAAB-57BB-49C6-BAFF-6C53605A8868}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6CA5FAAB-57BB-49C6-BAFF-6C53605A8868}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CF944E09-7C14-433C-A185-161848E989B3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CF944E09-7C14-433C-A185-161848E989B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CF944E09-7C14-433C-A185-161848E989B3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CF944E09-7C14-433C-A185-161848E989B3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{08D43202-8288-41AD-8ADD-DD69A5CE6DC6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{08D43202-8288-41AD-8ADD-DD69A5CE6DC6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{08D43202-8288-41AD-8ADD-DD69A5CE6DC6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{08D43202-8288-41AD-8ADD-DD69A5CE6DC6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{671916B9-8832-4F6C-8179-DF115B0C3E3B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{671916B9-8832-4F6C-8179-DF115B0C3E3B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{671916B9-8832-4F6C-8179-DF115B0C3E3B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{671916B9-8832-4F6C-8179-DF115B0C3E3B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{90434AD6-0849-46DD-9B51-B447619B7ACD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{90434AD6-0849-46DD-9B51-B447619B7ACD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{90434AD6-0849-46DD-9B51-B447619B7ACD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{90434AD6-0849-46DD-9B51-B447619B7ACD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FFD768FF-1B4F-4DE2-A3FB-15E3E9264A4D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FFD768FF-1B4F-4DE2-A3FB-15E3E9264A4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FFD768FF-1B4F-4DE2-A3FB-15E3E9264A4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FFD768FF-1B4F-4DE2-A3FB-15E3E9264A4D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{6EF99BE9-E574-45CC-AB36-2C473C557BFC} = {0331AD36-226E-4667-8BA4-2BACFED61529}
+		{BA5C3A92-5F64-4F51-9600-F7B091C09990} = {0331AD36-226E-4667-8BA4-2BACFED61529}
+		{E463986A-B118-4607-934F-4F210BB1C982} = {0331AD36-226E-4667-8BA4-2BACFED61529}
+		{90434AD6-0849-46DD-9B51-B447619B7ACD} = {0331AD36-226E-4667-8BA4-2BACFED61529}
+		{FFD768FF-1B4F-4DE2-A3FB-15E3E9264A4D} = {0331AD36-226E-4667-8BA4-2BACFED61529}
+	EndGlobalSection
+EndGlobal

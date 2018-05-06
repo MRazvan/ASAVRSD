@@ -1,0 +1,49 @@
+﻿<UserControl x:Class="AVR.Debugger.CPUView.CpuViewControl"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:AVR.Debugger.CPUView"
+             mc:Ignorable="d" 
+             d:DesignHeight="300" d:DesignWidth="300" IsEnabled="{Binding Path=InDebug}">
+    <UserControl.Resources>
+        <local:RegistersViewModel x:Key="DebugViewModel" />
+        <Style x:Key="RegisterValueStyle" TargetType="{x:Type TextBox}">
+            <Setter Property="BorderThickness" Value="0"></Setter>
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Path=Changed, UpdateSourceTrigger=PropertyChanged}" Value="True">
+                    <Setter Property="Foreground" Value="Red"></Setter>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+    <ListBox Grid.IsSharedSizeScope="True" ItemsSource="{Binding Registers}" d:DataContext="{StaticResource DebugViewModel}" Padding="10">
+        <ListBox.ItemContainerStyle>
+            <Style TargetType="ListBoxItem">
+                <Setter Property="IsSelected" Value="{Binding Content.IsSelected, Mode=TwoWay, RelativeSource={RelativeSource Self}}"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ListBoxItem">
+                            <ContentPresenter/>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+        </ListBox.ItemContainerStyle>
+        <ListBox.ItemTemplate>
+            <DataTemplate>
+                <Grid Margin="0,3,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition SharedSizeGroup="Name" MinWidth="50"/>
+                        <ColumnDefinition SharedSizeGroup="Value"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <TextBlock Grid.Column="0" Grid.Row="0"  Text="{Binding RegisterName}"></TextBlock>
+                    <TextBox Grid.Column="1" Grid.Row="0" Text="{Binding Path=DisplayValue}" Style="{StaticResource ResourceKey=RegisterValueStyle}"></TextBox>
+                </Grid>
+            </DataTemplate>
+        </ListBox.ItemTemplate>
+    </ListBox>
+</UserControl>
